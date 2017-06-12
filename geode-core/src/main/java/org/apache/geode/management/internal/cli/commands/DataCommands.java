@@ -14,9 +14,29 @@
  */
 package org.apache.geode.management.internal.cli.commands;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.shiro.subject.Subject;
+import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
+import org.springframework.shell.core.annotation.CliCommand;
+import org.springframework.shell.core.annotation.CliOption;
+
 import org.apache.geode.LogWriter;
 import org.apache.geode.cache.CacheClosedException;
 import org.apache.geode.cache.CacheFactory;
@@ -135,7 +155,7 @@ public class DataCommands implements GfshCommand {
 
     } catch (Exception ex) {
       result = ResultBuilder.createGemFireErrorResult(CliStrings.format(
-          CliStrings.REBALANCE__MSG__EXCEPTION_OCCRED_WHILE_REBALANCING_0, ex.getMessage()));
+          CliStrings.REBALANCE__MSG__EXCEPTION_OCCURRED_WHILE_REBALANCING_0, ex.getMessage()));
     }
     LogWrapper.getInstance().info("Rebalance returning result >>>" + result);
     return result;
@@ -747,7 +767,7 @@ public class DataCommands implements GfshCommand {
           optionContext = ConverterHint.MEMBERIDNAME, mandatory = true,
           help = CliStrings.EXPORT_DATA__MEMBER__HELP) String memberNameOrId) {
 
-    getCache().getSecurityService().authorizeRegionRead(regionName);
+    getSecurityService().authorizeRegionRead(regionName);
     final DistributedMember targetMember = CliUtil.getDistributedMemberByNameOrId(memberNameOrId);
     Result result;
 
@@ -805,7 +825,7 @@ public class DataCommands implements GfshCommand {
       @CliOption(key = CliStrings.IMPORT_DATA__INVOKE_CALLBACKS, unspecifiedDefaultValue = "false",
           help = CliStrings.IMPORT_DATA__INVOKE_CALLBACKS__HELP) boolean invokeCallbacks) {
 
-    getCache().getSecurityService().authorizeRegionWrite(regionName);
+    getSecurityService().authorizeRegionWrite(regionName);
 
     Result result;
 
@@ -1003,7 +1023,7 @@ public class DataCommands implements GfshCommand {
           help = CliStrings.LOCATE_ENTRY__RECURSIVE__HELP,
           unspecifiedDefaultValue = "false") boolean recursive) {
 
-    getCache().getSecurityService().authorizeRegionRead(regionPath, key);
+    getSecurityService().authorizeRegionRead(regionPath, key);
 
     DataCommandResult dataResult;
 

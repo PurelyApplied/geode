@@ -23,6 +23,8 @@ import org.apache.geode.test.dunit.rules.MBeanServerConnectionRule;
 import org.apache.geode.test.dunit.rules.ServerStarterRule;
 import org.apache.geode.test.junit.categories.IntegrationTest;
 import org.apache.geode.test.junit.categories.SecurityTest;
+
+import org.assertj.core.api.SoftAssertions;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -71,9 +73,9 @@ public class CacheServerMBeanWithShiroIniIntegrationTest {
     assertThatThrownBy(() -> bean.getActiveCQCount())
         .hasMessageContaining(TestCommand.clusterRead.toString());
     assertThatThrownBy(() -> bean.stopContinuousQuery("bar"))
-        .hasMessageContaining(TestCommand.dataManage.toString());
+        .hasMessageContaining(TestCommand.clusterManageQuery.toString());
     assertThatThrownBy(() -> bean.closeAllContinuousQuery("bar"))
-        .hasMessageContaining(TestCommand.dataManage.toString());
+        .hasMessageContaining(TestCommand.clusterManageQuery.toString());
     assertThatThrownBy(() -> bean.isRunning())
         .hasMessageContaining(TestCommand.clusterRead.toString());
     assertThatThrownBy(() -> bean.showClientQueueDetails("bar"))

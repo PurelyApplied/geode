@@ -314,7 +314,7 @@ public class ClientCommandsDUnitTest extends CliCommandTestBase {
       List<String> minConn = tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_MIN_CONN);
       List<String> maxConn = tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_MAX_CONN);
       List<String> redudancy =
-          tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_REDUDANCY);
+          tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_REDUNDANCY);
       List<String> numCqs = tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_CQs);
 
       getLogWriter().info("testDescribeClientWithServers getHeader numCqs =" + numCqs);
@@ -376,7 +376,8 @@ public class ClientCommandsDUnitTest extends CliCommandTestBase {
 
     List<String> minConn = tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_MIN_CONN);
     List<String> maxConn = tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_MAX_CONN);
-    List<String> redudancy = tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_REDUDANCY);
+    List<String> redudancy =
+        tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_REDUNDANCY);
     List<String> numCqs = tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_CQs);
 
     assertTrue(minConn.contains("1"));
@@ -435,7 +436,8 @@ public class ClientCommandsDUnitTest extends CliCommandTestBase {
 
     List<String> minConn = tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_MIN_CONN);
     List<String> maxConn = tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_MAX_CONN);
-    List<String> redudancy = tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_REDUDANCY);
+    List<String> redudancy =
+        tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_REDUNDANCY);
     List<String> numCqs = tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_CQs);
 
     assertTrue(minConn.contains("1"));
@@ -939,7 +941,8 @@ public class ClientCommandsDUnitTest extends CliCommandTestBase {
 
     List<String> minConn = tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_MIN_CONN);
     List<String> maxConn = tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_MAX_CONN);
-    List<String> redudancy = tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_REDUDANCY);
+    List<String> redudancy =
+        tableRsultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_REDUNDANCY);
 
     assertTrue(minConn.contains("1"));
     assertTrue(maxConn.contains("-1"));
@@ -1019,7 +1022,7 @@ public class ClientCommandsDUnitTest extends CliCommandTestBase {
     List<String> minConn = tableResultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_MIN_CONN);
     List<String> maxConn = tableResultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_MAX_CONN);
     List<String> redudancy =
-        tableResultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_REDUDANCY);
+        tableResultData.retrieveAllValues(CliStrings.DESCRIBE_CLIENT_REDUNDANCY);
 
     assertTrue(minConn.contains("1"));
     assertTrue(maxConn.contains("-1"));

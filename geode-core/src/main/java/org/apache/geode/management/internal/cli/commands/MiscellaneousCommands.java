@@ -14,7 +14,42 @@
  */
 package org.apache.geode.management.internal.cli.commands;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.zip.DataFormatException;
+import java.util.zip.GZIPInputStream;
+
+import javax.management.ObjectName;
+
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.Logger;
+import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
+import org.springframework.shell.core.annotation.CliCommand;
+import org.springframework.shell.core.annotation.CliOption;
+
 import org.apache.geode.LogWriter;
 import org.apache.geode.cache.execute.Execution;
 import org.apache.geode.cache.execute.Function;
@@ -60,7 +95,6 @@ import org.apache.geode.management.internal.cli.functions.NetstatFunction.Netsta
 import org.apache.geode.management.internal.cli.functions.ShutDownFunction;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 import org.apache.geode.management.internal.cli.remote.CommandExecutionContext;
-import org.apache.geode.management.internal.cli.result.CommandResultException;
 import org.apache.geode.management.internal.cli.result.CompositeResultData;
 import org.apache.geode.management.internal.cli.result.CompositeResultData.SectionResultData;
 import org.apache.geode.management.internal.cli.result.ErrorResultData;
@@ -72,39 +106,6 @@ import org.apache.geode.management.internal.cli.result.TabularResultData;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission.Operation;
 import org.apache.geode.security.ResourcePermission.Resource;
-import org.apache.logging.log4j.Logger;
-import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
-import org.springframework.shell.core.annotation.CliCommand;
-import org.springframework.shell.core.annotation.CliOption;
-
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.zip.DataFormatException;
-import java.util.zip.GZIPInputStream;
-import javax.management.ObjectName;
 
 /**
  * @since GemFire 7.0
@@ -172,7 +173,7 @@ public class MiscellaneousCommands implements GfshCommand {
         return ResultBuilder.createInfoResult(CliStrings.SHUTDOWN__MSG__IMPROPER_TIMEOUT);
       }
 
-      // convert to mili-seconds
+      // convert to milliseconds
       long timeout = userSpecifiedTimeout * 1000;
 
       InternalCache cache = getCache();
@@ -211,7 +212,7 @@ public class MiscellaneousCommands implements GfshCommand {
         }
 
         for (DistributedMember locator : locators) {
-          Set<DistributedMember> lsSet = new HashSet<DistributedMember>();
+          Set<DistributedMember> lsSet = new HashSet<>();
           lsSet.add(locator);
           long elapsedTime = shutDownNodeWithTimeOut(timeout, lsSet);
           timeout = timeout - elapsedTime;
@@ -224,7 +225,7 @@ public class MiscellaneousCommands implements GfshCommand {
         return ResultBuilder.createInfoResult("Shutdown is triggered");
       }
       // now shut down this manager
-      Set<DistributedMember> mgrSet = new HashSet<DistributedMember>();
+      Set<DistributedMember> mgrSet = new HashSet<>();
       mgrSet.add(manager);
       // No need to check further timeout as this is the last node we will be
       // shutting down
@@ -290,18 +291,16 @@ public class MiscellaneousCommands implements GfshCommand {
   @ResourceOperation(resource = Resource.CLUSTER, operation = Operation.MANAGE)
   public Result gc(
       @CliOption(key = {CliStrings.GROUP, CliStrings.GROUPS},
-          unspecifiedDefaultValue = CliMetaData.ANNOTATION_NULL_VALUE,
           help = CliStrings.GC__GROUP__HELP) String[] groups,
       @CliOption(key = CliStrings.MEMBER, optionContext = ConverterHint.ALL_MEMBER_IDNAME,
-          unspecifiedDefaultValue = CliMetaData.ANNOTATION_NULL_VALUE,
           help = CliStrings.GC__MEMBER__HELP) String memberId) {
     InternalCache cache = getCache();
-    Result result = null;
+    Result result;
     CompositeResultData gcResultTable = ResultBuilder.createCompositeResultData();
     TabularResultData resultTable = gcResultTable.addSection().addTable("Table1");
     String headerText = "GC Summary";
     resultTable.setHeader(headerText);
-    Set<DistributedMember> dsMembers = new HashSet<DistributedMember>();
+    Set<DistributedMember> dsMembers = new HashSet<>();
     if (memberId != null && memberId.length() > 0) {
       DistributedMember member = CliUtil.getDistributedMemberByNameOrId(memberId);
       if (member == null) {
@@ -328,13 +327,12 @@ public class MiscellaneousCommands implements GfshCommand {
 
   Result executeAndBuildResult(TabularResultData resultTable, Set<DistributedMember> dsMembers) {
     try {
-      List<?> resultList = null;
+      List<?> resultList;
       Function garbageCollectionFunction = new GarbageCollectionFunction();
       resultList =
           (List<?>) CliUtil.executeFunction(garbageCollectionFunction, null, dsMembers).getResult();
 
-      for (int i = 0; i < resultList.size(); i++) {
-        Object object = resultList.get(i);
+      for (Object object : resultList) {
         if (object instanceof Exception) {
           LogWrapper.getInstance().fine("Exception in GC " + ((Throwable) object).getMessage(),
               ((Throwable) object));
@@ -380,24 +378,20 @@ public class MiscellaneousCommands implements GfshCommand {
   @ResourceOperation(resource = Resource.CLUSTER, operation = Operation.READ)
   // TODO : Verify the auto-completion for multiple values.
   public Result netstat(
-      @CliOption(key = {CliStrings.MEMBER, CliStrings.MEMBERS}, mandatory = false,
-          unspecifiedDefaultValue = CliMetaData.ANNOTATION_NULL_VALUE,
+      @CliOption(key = {CliStrings.MEMBER, CliStrings.MEMBERS},
           optionContext = ConverterHint.ALL_MEMBER_IDNAME,
           help = CliStrings.NETSTAT__MEMBER__HELP) String[] members,
-      @CliOption(key = CliStrings.GROUP, mandatory = false,
-          unspecifiedDefaultValue = CliMetaData.ANNOTATION_NULL_VALUE,
-          optionContext = ConverterHint.MEMBERGROUP,
+      @CliOption(key = CliStrings.GROUP, optionContext = ConverterHint.MEMBERGROUP,
           help = CliStrings.NETSTAT__GROUP__HELP) String group,
       @CliOption(key = CliStrings.NETSTAT__FILE,
-          unspecifiedDefaultValue = CliMetaData.ANNOTATION_NULL_VALUE,
           help = CliStrings.NETSTAT__FILE__HELP) String saveAs,
       @CliOption(key = CliStrings.NETSTAT__WITHLSOF, specifiedDefaultValue = "true",
           unspecifiedDefaultValue = "false",
           help = CliStrings.NETSTAT__WITHLSOF__HELP) boolean withlsof) {
-    Result result = null;
+    Result result;
 
-    Map<String, DistributedMember> hostMemberMap = new HashMap<String, DistributedMember>();
-    Map<String, List<String>> hostMemberListMap = new HashMap<String, List<String>>();
+    Map<String, DistributedMember> hostMemberMap = new HashMap<>();
+    Map<String, List<String>> hostMemberListMap = new HashMap<>();
 
     try {
       if (members != null && members.length > 0 && group != null) {
@@ -410,7 +404,7 @@ public class MiscellaneousCommands implements GfshCommand {
       InternalDistributedSystem system = InternalDistributedSystem.getConnectedInstance();
 
       if (members != null) {
-        Set<String> notFoundMembers = new HashSet<String>();
+        Set<String> notFoundMembers = new HashSet<>();
         for (String memberIdOrName : members) {
           Set<DistributedMember> membersToExecuteOn = CliUtil.getAllMembers(system);
           boolean memberFound = false;
@@ -435,7 +429,7 @@ public class MiscellaneousCommands implements GfshCommand {
                   new Object[] {CliUtil.collectionToString(notFoundMembers, -1)}));
         }
       } else {
-        Set<DistributedMember> membersToExecuteOn = null;
+        Set<DistributedMember> membersToExecuteOn;
         if (group != null) {
           membersToExecuteOn = system.getGroupMembers(group);
         } else {
@@ -453,7 +447,7 @@ public class MiscellaneousCommands implements GfshCommand {
         }
       }
 
-      String lineSeparatorToUse = null;
+      String lineSeparatorToUse;
       lineSeparatorToUse = CommandExecutionContext.getShellLineSeparator();
       if (lineSeparatorToUse == null) {
         lineSeparatorToUse = GfshParser.LINE_SEPARATOR;
@@ -461,13 +455,12 @@ public class MiscellaneousCommands implements GfshCommand {
       NetstatFunctionArgument nfa = new NetstatFunctionArgument(lineSeparatorToUse, withlsof);
 
       if (!hostMemberMap.isEmpty()) {
-        Set<DistributedMember> membersToExecuteOn =
-            new HashSet<DistributedMember>(hostMemberMap.values());
+        Set<DistributedMember> membersToExecuteOn = new HashSet<>(hostMemberMap.values());
         ResultCollector<?, ?> netstatResult =
             CliUtil.executeFunction(NetstatFunction.INSTANCE, nfa, membersToExecuteOn);
         List<?> resultList = (List<?>) netstatResult.getResult();
-        for (int i = 0; i < resultList.size(); i++) {
-          NetstatFunctionResult netstatFunctionResult = (NetstatFunctionResult) resultList.get(i);
+        for (Object aResultList : resultList) {
+          NetstatFunctionResult netstatFunctionResult = (NetstatFunctionResult) aResultList;
           DeflaterInflaterData deflaterInflaterData = netstatFunctionResult.getCompressedBytes();
           try {
             String remoteHost = netstatFunctionResult.getHost();
@@ -528,9 +521,9 @@ public class MiscellaneousCommands implements GfshCommand {
     }
 
     // Maintain all members for a host - display purpose
-    List<String> list = null;
+    List<String> list;
     if (!hostMemberListMap.containsKey(host)) {
-      list = new ArrayList<String>();
+      list = new ArrayList<>();
       hostMemberListMap.put(host, list);
     } else {
       list = hostMemberListMap.get(host);
@@ -539,13 +532,13 @@ public class MiscellaneousCommands implements GfshCommand {
   }
 
   @CliCommand(value = CliStrings.SHOW_DEADLOCK, help = CliStrings.SHOW_DEADLOCK__HELP)
-  @CliMetaData(shellOnly = false, relatedTopic = {CliStrings.TOPIC_GEODE_DEBUG_UTIL})
+  @CliMetaData(relatedTopic = {CliStrings.TOPIC_GEODE_DEBUG_UTIL})
   @ResourceOperation(resource = Resource.CLUSTER, operation = Operation.READ)
   public Result showDeadlock(@CliOption(key = CliStrings.SHOW_DEADLOCK__DEPENDENCIES__FILE,
       help = CliStrings.SHOW_DEADLOCK__DEPENDENCIES__FILE__HELP,
       mandatory = true) String filename) {
 
-    Result result = null;
+    Result result;
     try {
       if (!filename.endsWith(".txt")) {
         return ResultBuilder
@@ -590,20 +583,19 @@ public class MiscellaneousCommands implements GfshCommand {
   }
 
   @CliCommand(value = CliStrings.SHOW_LOG, help = CliStrings.SHOW_LOG_HELP)
-  @CliMetaData(shellOnly = false, relatedTopic = {CliStrings.TOPIC_GEODE_DEBUG_UTIL})
+  @CliMetaData(relatedTopic = {CliStrings.TOPIC_GEODE_DEBUG_UTIL})
   @ResourceOperation(resource = Resource.CLUSTER, operation = Operation.READ)
   public Result showLog(
       @CliOption(key = CliStrings.MEMBER, optionContext = ConverterHint.ALL_MEMBER_IDNAME,
-          unspecifiedDefaultValue = CliMetaData.ANNOTATION_NULL_VALUE,
           help = CliStrings.SHOW_LOG_MEMBER_HELP, mandatory = true) String memberNameOrId,
       @CliOption(key = CliStrings.SHOW_LOG_LINE_NUM, unspecifiedDefaultValue = "0",
-          help = CliStrings.SHOW_LOG_LINE_NUM_HELP, mandatory = false) int numberOfLines) {
-    Result result = null;
+          help = CliStrings.SHOW_LOG_LINE_NUM_HELP) int numberOfLines) {
+    Result result;
     try {
       InternalCache cache = getCache();
       SystemManagementService service =
           (SystemManagementService) ManagementService.getExistingManagementService(cache);
-      MemberMXBean bean = null;
+      MemberMXBean bean;
       DistributedMember memberToBeInvoked = CliUtil.getDistributedMemberByNameOrId(memberNameOrId);
       if (memberToBeInvoked != null) {
         String memberId = memberToBeInvoked.getId();
@@ -655,7 +647,7 @@ public class MiscellaneousCommands implements GfshCommand {
    * Current implementation supports writing it to a file and returning the location of the file
    */
   @CliCommand(value = CliStrings.EXPORT_STACKTRACE, help = CliStrings.EXPORT_STACKTRACE__HELP)
-  @CliMetaData(shellOnly = false, relatedTopic = {CliStrings.TOPIC_GEODE_DEBUG_UTIL})
+  @CliMetaData(relatedTopic = {CliStrings.TOPIC_GEODE_DEBUG_UTIL})
   @ResourceOperation(resource = Resource.CLUSTER, operation = Operation.READ)
   public Result exportStackTrace(@CliOption(key = {CliStrings.MEMBER, CliStrings.MEMBERS},
       optionContext = ConverterHint.ALL_MEMBER_IDNAME,
@@ -671,7 +663,7 @@ public class MiscellaneousCommands implements GfshCommand {
           unspecifiedDefaultValue = "false",
           help = CliStrings.EXPORT_STACKTRACE__FAIL__IF__FILE__PRESENT__HELP) boolean failIfFilePresent) {
 
-    Result result = null;
+    Result result;
     StringBuffer filePrefix = new StringBuffer("stacktrace");
 
     if (fileName == null) {
@@ -690,7 +682,7 @@ public class MiscellaneousCommands implements GfshCommand {
 
       InfoResultData resultData = ResultBuilder.createInfoResultData();
 
-      Map<String, byte[]> dumps = new HashMap<String, byte[]>();
+      Map<String, byte[]> dumps = new HashMap<>();
       Set<DistributedMember> targetMembers = CliUtil.findMembers(group, memberNameOrId);
       if (targetMembers.isEmpty()) {
         return ResultBuilder.createUserErrorResult(CliStrings.NO_MEMBERS_FOUND_MESSAGE);
@@ -735,7 +727,7 @@ public class MiscellaneousCommands implements GfshCommand {
         return ResultBuilder
             .createShellClientAbortOperationResult(CliStrings.EXPORT_STACKTRACE_MSG_ABORTING);
       } else {
-        // we dont to show any info result
+        // we don't to show any info result
         return ResultBuilder.createInfoResult("");
       }
     }
@@ -750,17 +742,15 @@ public class MiscellaneousCommands implements GfshCommand {
    * @throws IOException
    */
   private String writeStacksToFile(Map<String, byte[]> dumps, String fileName) throws IOException {
-    String filePath = null;
-    OutputStream os = null;
-    PrintWriter ps = null;
-    File outputFile = null;
+    String filePath;
+    PrintWriter ps;
+    File outputFile;
 
-    try {
-      outputFile = new File(fileName);
-      os = new FileOutputStream(outputFile);
+    outputFile = new File(fileName);
+    try (OutputStream os = new FileOutputStream(outputFile)) {
       ps = new PrintWriter(os);
 
-      for (Map.Entry<String, byte[]> entry : dumps.entrySet()) {
+      for (Entry<String, byte[]> entry : dumps.entrySet()) {
         ps.append("*** Stack-trace for member " + entry.getKey() + " ***");
         ps.flush();
         GZIPInputStream zipIn = new GZIPInputStream(new ByteArrayInputStream(entry.getValue()));
@@ -774,15 +764,13 @@ public class MiscellaneousCommands implements GfshCommand {
       }
       ps.flush();
       filePath = outputFile.getCanonicalPath();
-    } finally {
-      os.close();
     }
 
     return filePath;
   }
 
   @CliCommand(value = CliStrings.SHOW_METRICS, help = CliStrings.SHOW_METRICS__HELP)
-  @CliMetaData(shellOnly = false, relatedTopic = {CliStrings.TOPIC_GEODE_STATISTICS})
+  @CliMetaData(relatedTopic = {CliStrings.TOPIC_GEODE_STATISTICS})
   @ResourceOperation(resource = Resource.CLUSTER, operation = Operation.READ)
   public Result showMetrics(
       @CliOption(key = {CliStrings.MEMBER}, optionContext = ConverterHint.ALL_MEMBER_IDNAME,
@@ -796,7 +784,7 @@ public class MiscellaneousCommands implements GfshCommand {
       @CliOption(key = {CliStrings.SHOW_METRICS__CATEGORY},
           help = CliStrings.SHOW_METRICS__CATEGORY__HELP) String[] categories) {
 
-    Result result = null;
+    Result result;
     try {
 
       if (export_to_report_to != null && !export_to_report_to.isEmpty()) {
@@ -873,11 +861,10 @@ public class MiscellaneousCommands implements GfshCommand {
    * @return ResultData with required System wide statistics or ErrorResultData if DS MBean is not
    *         found to gather metrics
    */
-  private ResultData getSystemWideMetrics(String export_to_report_to, String[] categoriesArr)
-      throws Exception {
+  private ResultData getSystemWideMetrics(String export_to_report_to, String[] categoriesArr) {
     final InternalCache cache = getCache();
-    final ManagementService managmentService = ManagementService.getManagementService(cache);
-    DistributedSystemMXBean dsMxBean = managmentService.getDistributedSystemMXBean();
+    final ManagementService managementService = ManagementService.getManagementService(cache);
+    DistributedSystemMXBean dsMxBean = managementService.getDistributedSystemMXBean();
     StringBuilder csvBuilder = null;
     if (dsMxBean != null) {
 
@@ -898,7 +885,7 @@ public class MiscellaneousCommands implements GfshCommand {
 
       if (categoriesArr != null && categoriesArr.length != 0) {
         Set<String> categories = createSet(categoriesArr);
-        Set<String> checkSet = new HashSet<String>(categoriesMap.keySet());
+        Set<String> checkSet = new HashSet<>(categoriesMap.keySet());
         Set<String> userCategories = getSetDifference(categories, checkSet);
 
         // Checking if the categories specified by the user are valid or not
@@ -923,12 +910,12 @@ public class MiscellaneousCommands implements GfshCommand {
       }
       metricsTable.setHeader("Cluster-wide Metrics");
 
-      if (categoriesMap.get("cluster").booleanValue()) {
+      if (categoriesMap.get("cluster")) {
         writeToTableAndCsv(metricsTable, "cluster", "totalHeapSize", dsMxBean.getTotalHeapSize(),
             csvBuilder);
       }
 
-      if (categoriesMap.get("cache").booleanValue()) {
+      if (categoriesMap.get("cache")) {
         writeToTableAndCsv(metricsTable, "cache", "totalRegionEntryCount",
             dsMxBean.getTotalRegionEntryCount(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "totalRegionCount", dsMxBean.getTotalRegionCount(),
@@ -939,7 +926,7 @@ public class MiscellaneousCommands implements GfshCommand {
             csvBuilder);
       }
 
-      if (categoriesMap.get("diskstore").booleanValue()) {
+      if (categoriesMap.get("diskstore")) {
         writeToTableAndCsv(metricsTable, "diskstore", "totalDiskUsage",
             dsMxBean.getTotalDiskUsage(), csvBuilder); // deadcoded to workaround bug 46397
         writeToTableAndCsv(metricsTable, ""/* 46608 */, "diskReadsRate",
@@ -952,7 +939,7 @@ public class MiscellaneousCommands implements GfshCommand {
             dsMxBean.getTotalBackupInProgress(), csvBuilder);
       }
 
-      if (categoriesMap.get("query").booleanValue()) {
+      if (categoriesMap.get("query")) {
         writeToTableAndCsv(metricsTable, "query", "activeCQCount", dsMxBean.getActiveCQCount(),
             csvBuilder);
         writeToTableAndCsv(metricsTable, "", "queryRequestRate", dsMxBean.getQueryRequestRate(),
@@ -988,7 +975,7 @@ public class MiscellaneousCommands implements GfshCommand {
     ObjectName memberMBeanName = managementService.getMemberMBeanName(distributedMember);
     MemberMXBean memberMxBean =
         managementService.getMBeanInstance(memberMBeanName, MemberMXBean.class);
-    ObjectName csMxBeanName = null;
+    ObjectName csMxBeanName;
     CacheServerMXBean csMxBean = null;
 
     if (memberMxBean != null) {
@@ -1028,7 +1015,7 @@ public class MiscellaneousCommands implements GfshCommand {
 
       if (categoriesArr != null && categoriesArr.length != 0) {
         Set<String> categories = createSet(categoriesArr);
-        Set<String> checkSet = new HashSet<String>(categoriesMap.keySet());
+        Set<String> checkSet = new HashSet<>(categoriesMap.keySet());
         Set<String> userCategories = getSetDifference(categories, checkSet);
 
         // Checking if the categories specified by the user are valid or not
@@ -1056,7 +1043,7 @@ public class MiscellaneousCommands implements GfshCommand {
        */
       // member, jvm, region, serialization, communication, function, transaction, diskstore, lock,
       // eviction, distribution
-      if (categoriesMap.get("member").booleanValue()) {
+      if (categoriesMap.get("member")) {
         writeToTableAndCsv(metricsTable, "member", "upTime", memberMxBean.getMemberUpTime(),
             csvBuilder);
         writeToTableAndCsv(metricsTable, "", "cpuUsage", memberMxBean.getCpuUsage(), csvBuilder);
@@ -1068,7 +1055,7 @@ public class MiscellaneousCommands implements GfshCommand {
       /*
        * JVM Metrics
        */
-      if (categoriesMap.get("jvm").booleanValue()) {
+      if (categoriesMap.get("jvm")) {
         writeToTableAndCsv(metricsTable, "jvm ", "jvmThreads ", jvmMetrics.getTotalThreads(),
             csvBuilder);
         writeToTableAndCsv(metricsTable, "", "fileDescriptorLimit",
@@ -1079,7 +1066,7 @@ public class MiscellaneousCommands implements GfshCommand {
       /*
        * Member wide region metrics
        */
-      if (categoriesMap.get("region").booleanValue()) {
+      if (categoriesMap.get("region")) {
         writeToTableAndCsv(metricsTable, "region ", "totalRegionCount ",
             memberMxBean.getTotalRegionCount(), csvBuilder);
         String[] regionNames = memberMxBean.listRegions();
@@ -1120,7 +1107,7 @@ public class MiscellaneousCommands implements GfshCommand {
             csvBuilder);
         writeToTableAndCsv(metricsTable, "", "putAllAvgLatency", memberMxBean.getPutAllAvgLatency(),
             csvBuilder);
-        // Not available from stats. After Stats re-org it will be avaialble
+        // Not available from stats. After Stats re-org it will be available
         // writeToTableAndCsv(metricsTable, "", "getAllAvgLatency",
         // memberMxBean.getGetAllAvgLatency(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "totalMissCount", memberMxBean.getTotalMissCount(),
@@ -1140,7 +1127,7 @@ public class MiscellaneousCommands implements GfshCommand {
       /*
        * SERIALIZATION
        */
-      if (categoriesMap.get("serialization").booleanValue()) {
+      if (categoriesMap.get("serialization")) {
         writeToTableAndCsv(metricsTable, "serialization", "serializationRate",
             memberMxBean.getSerializationRate(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "serializationLatency",
@@ -1160,7 +1147,7 @@ public class MiscellaneousCommands implements GfshCommand {
       /*
        * Communication Metrics
        */
-      if (categoriesMap.get("communication").booleanValue()) {
+      if (categoriesMap.get("communication")) {
         writeToTableAndCsv(metricsTable, "communication", "bytesSentRate",
             memberMxBean.getBytesSentRate(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "bytesReceivedRate",
@@ -1177,23 +1164,20 @@ public class MiscellaneousCommands implements GfshCommand {
       /*
        * Member wide function metrics
        */
-      if (categoriesMap.get("function").booleanValue()) {
+      if (categoriesMap.get("function")) {
         writeToTableAndCsv(metricsTable, "function", "numRunningFunctions",
             memberMxBean.getNumRunningFunctions(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "functionExecutionRate",
             memberMxBean.getFunctionExecutionRate(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "numRunningFunctionsHavingResults",
             memberMxBean.getNumRunningFunctionsHavingResults(), csvBuilder);
-        // Not Avaialble from Stats
-        // writeToTableAndCsv(metricsTable, "", "funcExecutionQueueSize",
-        // memberMxBean.getFuncExecutionQueueSize(), csvBuilder);
       }
 
       /*
        * totalTransactionsCount currentTransactionalThreadIds transactionCommitsAvgLatency
        * transactionCommittedTotalCount transactionRolledBackTotalCount transactionCommitsRate
        */
-      if (categoriesMap.get("transaction").booleanValue()) {
+      if (categoriesMap.get("transaction")) {
         writeToTableAndCsv(metricsTable, "transaction", "totalTransactionsCount",
             memberMxBean.getTotalTransactionsCount(), csvBuilder);
 
@@ -1209,7 +1193,7 @@ public class MiscellaneousCommands implements GfshCommand {
       /*
        * Member wide disk metrics
        */
-      if (categoriesMap.get("diskstore").booleanValue()) {
+      if (categoriesMap.get("diskstore")) {
         writeToTableAndCsv(metricsTable, "diskstore", "totalDiskUsage",
             memberMxBean.getTotalDiskUsage(), csvBuilder); // deadcoded to workaround bug 46397
         writeToTableAndCsv(metricsTable, ""/* 46608 */, "diskReadsRate",
@@ -1227,7 +1211,7 @@ public class MiscellaneousCommands implements GfshCommand {
       /*
        * Member wide Lock
        */
-      if (categoriesMap.get("lock").booleanValue()) {
+      if (categoriesMap.get("lock")) {
         writeToTableAndCsv(metricsTable, "lock", "lockWaitsInProgress",
             memberMxBean.getLockWaitsInProgress(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "totalLockWaitTime",
@@ -1240,7 +1224,7 @@ public class MiscellaneousCommands implements GfshCommand {
       /*
        * Eviction
        */
-      if (categoriesMap.get("eviction").booleanValue()) {
+      if (categoriesMap.get("eviction")) {
         writeToTableAndCsv(metricsTable, "eviction", "lruEvictionRate",
             memberMxBean.getLruEvictionRate(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "lruDestroyRate", memberMxBean.getLruDestroyRate(),
@@ -1249,7 +1233,7 @@ public class MiscellaneousCommands implements GfshCommand {
       /*
        * Distribution
        */
-      if (categoriesMap.get("distribution").booleanValue()) {
+      if (categoriesMap.get("distribution")) {
         writeToTableAndCsv(metricsTable, "distribution", "getInitialImagesInProgress",
             memberMxBean.getInitialImagesInProgres(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "getInitialImageTime",
@@ -1261,7 +1245,7 @@ public class MiscellaneousCommands implements GfshCommand {
       /*
        * OffHeap
        */
-      if (categoriesMap.get("offheap").booleanValue()) {
+      if (categoriesMap.get("offheap")) {
         writeToTableAndCsv(metricsTable, "offheap", "maxMemory", memberMxBean.getOffHeapMaxMemory(),
             csvBuilder);
         writeToTableAndCsv(metricsTable, "", "freeMemory", memberMxBean.getOffHeapFreeMemory(),
@@ -1381,7 +1365,7 @@ public class MiscellaneousCommands implements GfshCommand {
 
       if (categoriesArr != null && categoriesArr.length != 0) {
         Set<String> categories = createSet(categoriesArr);
-        Set<String> checkSet = new HashSet<String>(categoriesMap.keySet());
+        Set<String> checkSet = new HashSet<>(categoriesMap.keySet());
         Set<String> userCategories = getSetDifference(categories, checkSet);
 
         // Checking if the categories specified by the user are valid or not
@@ -1407,14 +1391,14 @@ public class MiscellaneousCommands implements GfshCommand {
        * General System metrics
        */
       // cluster, region, partition , diskstore, callback, eviction
-      if (categoriesMap.get("cluster").booleanValue()) {
+      if (categoriesMap.get("cluster")) {
         writeToTableAndCsv(metricsTable, "cluster", "member count", regionMxBean.getMemberCount(),
             csvBuilder);
         writeToTableAndCsv(metricsTable, "", "region entry count",
             regionMxBean.getSystemRegionEntryCount(), csvBuilder);
       }
 
-      if (categoriesMap.get("region").booleanValue()) {
+      if (categoriesMap.get("region")) {
         writeToTableAndCsv(metricsTable, "region", "lastModifiedTime",
             regionMxBean.getLastModifiedTime(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "lastAccessedTime", regionMxBean.getLastAccessedTime(),
@@ -1432,7 +1416,7 @@ public class MiscellaneousCommands implements GfshCommand {
             csvBuilder);
       }
 
-      if (categoriesMap.get("partition").booleanValue()) {
+      if (categoriesMap.get("partition")) {
         writeToTableAndCsv(metricsTable, "partition", "putLocalRate",
             regionMxBean.getPutLocalRate(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "putRemoteRate", regionMxBean.getPutRemoteRate(),
@@ -1456,7 +1440,7 @@ public class MiscellaneousCommands implements GfshCommand {
       /*
        * Disk store
        */
-      if (categoriesMap.get("diskstore").booleanValue()) {
+      if (categoriesMap.get("diskstore")) {
         writeToTableAndCsv(metricsTable, "diskstore", "totalEntriesOnlyOnDisk",
             regionMxBean.getTotalEntriesOnlyOnDisk(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "diskReadsRate", regionMxBean.getDiskReadsRate(),
@@ -1472,7 +1456,7 @@ public class MiscellaneousCommands implements GfshCommand {
       /*
        * LISTENER
        */
-      if (categoriesMap.get("callback").booleanValue()) {
+      if (categoriesMap.get("callback")) {
         writeToTableAndCsv(metricsTable, "callback", "cacheWriterCallsAvgLatency",
             regionMxBean.getCacheWriterCallsAvgLatency(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "cacheListenerCallsAvgLatency",
@@ -1482,7 +1466,7 @@ public class MiscellaneousCommands implements GfshCommand {
       /*
        * Eviction
        */
-      if (categoriesMap.get("eviction").booleanValue()) {
+      if (categoriesMap.get("eviction")) {
         writeToTableAndCsv(metricsTable, "eviction", "lruEvictionRate",
             regionMxBean.getLruEvictionRate(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "lruDestroyRate", regionMxBean.getLruDestroyRate(),
@@ -1549,7 +1533,7 @@ public class MiscellaneousCommands implements GfshCommand {
 
       if (categoriesArr != null && categoriesArr.length != 0) {
         Set<String> categories = createSet(categoriesArr);
-        Set<String> checkSet = new HashSet<String>(categoriesMap.keySet());
+        Set<String> checkSet = new HashSet<>(categoriesMap.keySet());
         Set<String> userCategories = getSetDifference(categories, checkSet);
 
         // Checking if the categories specified by the user are valid or not
@@ -1572,7 +1556,7 @@ public class MiscellaneousCommands implements GfshCommand {
         }
       }
 
-      if (categoriesMap.get("region").booleanValue()) {
+      if (categoriesMap.get("region")) {
         writeToTableAndCsv(metricsTable, "region", "lastModifiedTime",
             regionMxBean.getLastModifiedTime(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "lastAccessedTime", regionMxBean.getLastAccessedTime(),
@@ -1590,7 +1574,7 @@ public class MiscellaneousCommands implements GfshCommand {
             csvBuilder);
       }
 
-      if (categoriesMap.get("partition").booleanValue()) {
+      if (categoriesMap.get("partition")) {
         writeToTableAndCsv(metricsTable, "partition", "putLocalRate",
             regionMxBean.getPutLocalRate(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "putRemoteRate", regionMxBean.getPutRemoteRate(),
@@ -1616,7 +1600,7 @@ public class MiscellaneousCommands implements GfshCommand {
       /*
        * Disk store
        */
-      if (categoriesMap.get("diskstore").booleanValue()) {
+      if (categoriesMap.get("diskstore")) {
         writeToTableAndCsv(metricsTable, "diskstore", "totalEntriesOnlyOnDisk",
             regionMxBean.getTotalEntriesOnlyOnDisk(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "diskReadsRate", "" + regionMxBean.getDiskReadsRate(),
@@ -1631,7 +1615,7 @@ public class MiscellaneousCommands implements GfshCommand {
       /*
        * LISTENER
        */
-      if (categoriesMap.get("callback").booleanValue()) {
+      if (categoriesMap.get("callback")) {
         writeToTableAndCsv(metricsTable, "callback", "cacheWriterCallsAvgLatency",
             regionMxBean.getCacheWriterCallsAvgLatency(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "cacheListenerCallsAvgLatency",
@@ -1641,7 +1625,7 @@ public class MiscellaneousCommands implements GfshCommand {
       /*
        * Eviction
        */
-      if (categoriesMap.get("eviction").booleanValue()) {
+      if (categoriesMap.get("eviction")) {
         writeToTableAndCsv(metricsTable, "eviction", "lruEvictionRate",
             regionMxBean.getLruEvictionRate(), csvBuilder);
         writeToTableAndCsv(metricsTable, "", "lruDestroyRate", regionMxBean.getLruDestroyRate(),
@@ -1686,7 +1670,7 @@ public class MiscellaneousCommands implements GfshCommand {
       double metricValue, StringBuilder csvBuilder) {
     metricsTable.accumulate(CliStrings.SHOW_METRICS__TYPE__HEADER, type);
     metricsTable.accumulate(CliStrings.SHOW_METRICS__METRIC__HEADER, metricName);
-    metricsTable.accumulate(CliStrings.SHOW_METRICS__VALUE__HEADER, Double.valueOf(metricValue));
+    metricsTable.accumulate(CliStrings.SHOW_METRICS__VALUE__HEADER, metricValue);
 
     if (csvBuilder != null) {
       csvBuilder.append(type);
@@ -1699,10 +1683,8 @@ public class MiscellaneousCommands implements GfshCommand {
   }
 
   private Set<String> createSet(String[] categories) {
-    Set<String> categoriesSet = new HashSet<String>();
-    for (String category : categories) {
-      categoriesSet.add(category);
-    }
+    Set<String> categoriesSet = new HashSet<>();
+    Collections.addAll(categoriesSet, categories);
     return categoriesSet;
   }
 
@@ -1712,7 +1694,7 @@ public class MiscellaneousCommands implements GfshCommand {
    * @return map with categories for system metrics and display flag set to true
    */
   private Map<String, Boolean> getSystemMetricsCategories() {
-    Map<String, Boolean> categories = new HashMap<String, Boolean>();
+    Map<String, Boolean> categories = new HashMap<>();
     categories.put("cluster", true);
     categories.put("cache", true);
     categories.put("diskstore", true);
@@ -1726,7 +1708,7 @@ public class MiscellaneousCommands implements GfshCommand {
    * @return map with categories for region metrics and display flag set to true
    */
   private Map<String, Boolean> getRegionMetricsCategories() {
-    Map<String, Boolean> categories = new HashMap<String, Boolean>();
+    Map<String, Boolean> categories = new HashMap<>();
 
     categories.put("region", true);
     categories.put("partition", true);
@@ -1756,7 +1738,7 @@ public class MiscellaneousCommands implements GfshCommand {
    * @return map with categories for member metrics and display flag set to true
    */
   private Map<String, Boolean> getMemberMetricsCategories() {
-    Map<String, Boolean> categories = new HashMap<String, Boolean>();
+    Map<String, Boolean> categories = new HashMap<>();
     categories.put("member", true);
     categories.put("jvm", true);
     categories.put("region", true);
@@ -1842,7 +1824,7 @@ public class MiscellaneousCommands implements GfshCommand {
       InternalCache cache = GemFireCacheImpl.getInstance();
       LogWriter logger = cache.getLogger();
 
-      Set<DistributedMember> dsMembers = new HashSet<DistributedMember>();
+      Set<DistributedMember> dsMembers = new HashSet<>();
       Set<DistributedMember> ds = CliUtil.getAllMembers(cache);
 
       if (grps != null && grps.length > 0) {
@@ -1853,9 +1835,7 @@ public class MiscellaneousCommands implements GfshCommand {
 
       if (memberIds != null && memberIds.length > 0) {
         for (String member : memberIds) {
-          Iterator<DistributedMember> it = ds.iterator();
-          while (it.hasNext()) {
-            DistributedMember mem = it.next();
+          for (DistributedMember mem : ds) {
             if (mem.getName() != null
                 && (mem.getName().equals(member) || mem.getId().equals(member))) {
               dsMembers.add(mem);
@@ -1909,7 +1889,6 @@ public class MiscellaneousCommands implements GfshCommand {
           }
         } catch (Exception ex) {
           LogWrapper.getInstance().warning("change log level command exception " + ex);
-          continue;
         }
       }
 
@@ -1937,7 +1916,7 @@ public class MiscellaneousCommands implements GfshCommand {
   }
 
   private Set<String> getSetDifference(Set<String> set1, Set<String> set2) {
-    Set<String> setDifference = new HashSet<String>();
+    Set<String> setDifference = new HashSet<>();
     for (String element : set1) {
       if (!(set2.contains(element.toLowerCase()))) {
         setDifference.add(element);

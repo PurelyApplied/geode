@@ -13,12 +13,6 @@
  * the License.
  */
 
-/**
- * Used to carry arguments between gfsh region command implementations and the functions that do the
- * work for those commands.
- * 
- * @since GemFire 7.0
- */
 package org.apache.geode.management.internal.cli.functions;
 
 import java.io.Serializable;
@@ -35,6 +29,12 @@ import org.apache.geode.cache.RegionShortcut;
 import org.apache.geode.management.internal.cli.CliUtil;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 
+/**
+ * Used to carry arguments between gfsh region command implementations and the functions that do the
+ * work for those commands.
+ *
+ * @since GemFire 7.0
+ */
 public class RegionFunctionArgs implements Serializable {
   private static final long serialVersionUID = -5158224572470173267L;
 

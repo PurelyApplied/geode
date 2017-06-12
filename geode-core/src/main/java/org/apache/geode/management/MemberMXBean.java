@@ -14,12 +14,14 @@
  */
 package org.apache.geode.management;
 
-import java.util.Map;
-
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.internal.security.ResourceOperation;
+import org.apache.geode.security.ResourcePermission;
 import org.apache.geode.security.ResourcePermission.Operation;
 import org.apache.geode.security.ResourcePermission.Resource;
+import org.apache.geode.security.ResourcePermission.Target;
+
+import java.util.Map;
 
 /**
  * MBean that provides access to information and management functionality for a
@@ -158,7 +160,8 @@ public interface MemberMXBean {
    * 
    * @return A list of names of the disk stores that were compacted.
    */
-  @ResourceOperation(resource = Resource.DATA, operation = Operation.MANAGE)
+  @ResourceOperation(resource = Resource.CLUSTER, operation = Operation.MANAGE,
+      target = Target.DISK)
   public String[] compactAllDiskStores();
 
   /**

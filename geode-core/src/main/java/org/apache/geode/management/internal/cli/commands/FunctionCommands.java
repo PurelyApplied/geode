@@ -14,6 +14,21 @@
  */
 package org.apache.geode.management.internal.cli.commands;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import org.apache.commons.lang.BooleanUtils;
+import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
+import org.springframework.shell.core.annotation.CliCommand;
+import org.springframework.shell.core.annotation.CliOption;
+
 import org.apache.geode.SystemFailure;
 import org.apache.geode.cache.Region;
 import org.apache.geode.cache.execute.Execution;
@@ -40,7 +55,6 @@ import org.apache.geode.management.internal.cli.functions.ListFunctionFunction;
 import org.apache.geode.management.internal.cli.functions.UnregisterFunction;
 import org.apache.geode.management.internal.cli.functions.UserFunctionExecution;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
-import org.apache.geode.management.internal.cli.result.CommandResultException;
 import org.apache.geode.management.internal.cli.result.CompositeResultData;
 import org.apache.geode.management.internal.cli.result.ErrorResultData;
 import org.apache.geode.management.internal.cli.result.ResultBuilder;
@@ -48,18 +62,7 @@ import org.apache.geode.management.internal.cli.result.TabularResultData;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission.Operation;
 import org.apache.geode.security.ResourcePermission.Resource;
-import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
-import org.springframework.shell.core.annotation.CliCommand;
-import org.springframework.shell.core.annotation.CliOption;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
+import org.apache.geode.security.ResourcePermission.Target;
 
 /**
  * @since GemFire 7.0
@@ -71,31 +74,25 @@ public class FunctionCommands implements GfshCommand {
 
   @CliCommand(value = CliStrings.EXECUTE_FUNCTION, help = CliStrings.EXECUTE_FUNCTION__HELP)
   @CliMetaData(relatedTopic = {CliStrings.TOPIC_GEODE_FUNCTION})
+  // TODO PSR: API security callback?
   @ResourceOperation(resource = Resource.DATA, operation = Operation.WRITE)
   public Result executeFunction(
       // TODO: Add optioncontext for functionID
       @CliOption(key = CliStrings.EXECUTE_FUNCTION__ID, mandatory = true,
           help = CliStrings.EXECUTE_FUNCTION__ID__HELP) String functionId,
       @CliOption(key = {CliStrings.GROUP, CliStrings.GROUPS},
-          unspecifiedDefaultValue = CliMetaData.ANNOTATION_NULL_VALUE,
           optionContext = ConverterHint.MEMBERGROUP,
           help = CliStrings.EXECUTE_FUNCTION__ONGROUPS__HELP) String[] onGroups,
-      @CliOption(key = CliStrings.MEMBER,
-          unspecifiedDefaultValue = CliMetaData.ANNOTATION_NULL_VALUE,
-          optionContext = ConverterHint.MEMBERIDNAME,
+      @CliOption(key = CliStrings.MEMBER, optionContext = ConverterHint.MEMBERIDNAME,
           help = CliStrings.EXECUTE_FUNCTION__ONMEMBER__HELP) String onMember,
       @CliOption(key = CliStrings.EXECUTE_FUNCTION__ONREGION,
-          unspecifiedDefaultValue = CliMetaData.ANNOTATION_NULL_VALUE,
           optionContext = ConverterHint.REGION_PATH,
           help = CliStrings.EXECUTE_FUNCTION__ONREGION__HELP) String onRegion,
       @CliOption(key = CliStrings.EXECUTE_FUNCTION__ARGUMENTS,
-          unspecifiedDefaultValue = CliMetaData.ANNOTATION_NULL_VALUE,
           help = CliStrings.EXECUTE_FUNCTION__ARGUMENTS__HELP) String[] arguments,
       @CliOption(key = CliStrings.EXECUTE_FUNCTION__RESULTCOLLECTOR,
-          unspecifiedDefaultValue = CliMetaData.ANNOTATION_NULL_VALUE,
           help = CliStrings.EXECUTE_FUNCTION__RESULTCOLLECTOR__HELP) String resultCollector,
       @CliOption(key = CliStrings.EXECUTE_FUNCTION__FILTER,
-          unspecifiedDefaultValue = CliMetaData.ANNOTATION_NULL_VALUE,
           help = CliStrings.EXECUTE_FUNCTION__FILTER__HELP) String filterString) {
 
     Result result = null;
@@ -105,8 +102,8 @@ public class FunctionCommands implements GfshCommand {
     resultTable.setHeader(headerText);
     ResultCollector resultCollectorInstance = null;
     Function function;
-    Set<String> filters = new HashSet<String>();
-    Execution execution = null;
+    Set<String> filters = new HashSet<>();
+    Execution execution;
     if (functionId != null) {
       functionId = functionId.trim();
     }
@@ -130,31 +127,8 @@ public class FunctionCommands implements GfshCommand {
         return result;
       }
 
-      if (onRegion != null && onMember != null && onGroups != null) {
-        ErrorResultData errorResultData =
-            ResultBuilder.createErrorResultData().setErrorCode(ResultBuilder.ERRORCODE_DEFAULT)
-                .addLine(CliStrings.EXECUTE_FUNCTION__MSG__OPTIONS);
-        result = ResultBuilder.buildResult(errorResultData);
-        return result;
-      } else if (onRegion != null && onMember != null) {
-        ErrorResultData errorResultData =
-            ResultBuilder.createErrorResultData().setErrorCode(ResultBuilder.ERRORCODE_DEFAULT)
-                .addLine(CliStrings.EXECUTE_FUNCTION__MSG__OPTIONS);
-        result = ResultBuilder.buildResult(errorResultData);
-        return result;
-      } else if (onMember != null && onGroups != null) {
-        ErrorResultData errorResultData =
-            ResultBuilder.createErrorResultData().setErrorCode(ResultBuilder.ERRORCODE_DEFAULT)
-                .addLine(CliStrings.EXECUTE_FUNCTION__MSG__OPTIONS);
-        result = ResultBuilder.buildResult(errorResultData);
-        return result;
-      } else if (onRegion != null && onGroups != null) {
-        ErrorResultData errorResultData =
-            ResultBuilder.createErrorResultData().setErrorCode(ResultBuilder.ERRORCODE_DEFAULT)
-                .addLine(CliStrings.EXECUTE_FUNCTION__MSG__OPTIONS);
-        result = ResultBuilder.buildResult(errorResultData);
-        return result;
-      } else if (onRegion != null && onMember != null && onGroups != null) {
+      if (isMoreThanOneIsTrue(onRegion != null, onMember != null, onGroups != null)) {
+        // Provide Only one of region/member/groups
         ErrorResultData errorResultData =
             ResultBuilder.createErrorResultData().setErrorCode(ResultBuilder.ERRORCODE_DEFAULT)
                 .addLine(CliStrings.EXECUTE_FUNCTION__MSG__OPTIONS);
@@ -218,7 +192,7 @@ public class FunctionCommands implements GfshCommand {
           boolean matchFound = false;
 
           if (membersName.length > 0) {
-            while (it.hasNext() && matchFound == false) {
+            while (it.hasNext() && !matchFound) {
               DistributedMember dsmember = (DistributedMember) it.next();
               for (String memberName : membersName) {
                 if (MBeanJMXAdapter.getMemberNameOrId(dsmember).equals(memberName)) {
@@ -229,7 +203,7 @@ public class FunctionCommands implements GfshCommand {
               }
             }
           }
-          if (matchFound == true) {
+          if (matchFound) {
             executeAndGetResults(functionId, filterString, resultCollector, arguments, cache,
                 member, resultTable, onRegion);
             return ResultBuilder.buildResult(resultTable);
@@ -276,7 +250,7 @@ public class FunctionCommands implements GfshCommand {
         }
       } else if (onGroups != null) {
         // execute on group members
-        Set<DistributedMember> dsMembers = new HashSet<DistributedMember>();
+        Set<DistributedMember> dsMembers = new HashSet<>();
         for (String grp : onGroups) {
           dsMembers.addAll(cache.getDistributedSystem().getGroupMembers(grp));
         }
@@ -310,26 +284,6 @@ public class FunctionCommands implements GfshCommand {
         }
         return ResultBuilder.buildResult(resultTable);
       }
-    } catch (InstantiationException e) {
-      ErrorResultData errorResultData = ResultBuilder.createErrorResultData()
-          .setErrorCode(ResultBuilder.ERRORCODE_DEFAULT).addLine(e.getMessage());
-      result = ResultBuilder.buildResult(errorResultData);
-      return result;
-    } catch (IllegalAccessException e) {
-      ErrorResultData errorResultData = ResultBuilder.createErrorResultData()
-          .setErrorCode(ResultBuilder.ERRORCODE_DEFAULT).addLine(e.getMessage());
-      result = ResultBuilder.buildResult(errorResultData);
-      return result;
-    } catch (IllegalArgumentException e) {
-      ErrorResultData errorResultData = ResultBuilder.createErrorResultData()
-          .setErrorCode(ResultBuilder.ERRORCODE_DEFAULT).addLine(e.getMessage());
-      result = ResultBuilder.buildResult(errorResultData);
-      return result;
-    } catch (SecurityException e) {
-      ErrorResultData errorResultData = ResultBuilder.createErrorResultData()
-          .setErrorCode(ResultBuilder.ERRORCODE_DEFAULT).addLine(e.getMessage());
-      result = ResultBuilder.buildResult(errorResultData);
-      return result;
     } catch (Exception e) {
       ErrorResultData errorResultData = ResultBuilder.createErrorResultData()
           .setErrorCode(ResultBuilder.ERRORCODE_DEFAULT).addLine(e.getMessage());
@@ -340,10 +294,14 @@ public class FunctionCommands implements GfshCommand {
     return result;
   }
 
+  private boolean isMoreThanOneIsTrue(Boolean... values) {
+    return Stream.of(values).mapToInt(BooleanUtils::toInteger).sum() > 1;
+  }
+
   void executeAndGetResults(String functionId, String filterString, String resultCollector,
       String[] arguments, InternalCache cache, DistributedMember member,
       TabularResultData resultTable, String onRegion) {
-    StringBuilder resultMessege = new StringBuilder();
+    StringBuilder resultMessage = new StringBuilder();
     try {
       Function function = new UserFunctionExecution();
       Object[] args = new Object[5];
@@ -355,7 +313,7 @@ public class FunctionCommands implements GfshCommand {
         args[2] = resultCollector;
       }
       if (arguments != null && arguments.length > 0) {
-        args[3] = new String();
+        args[3] = "";
         for (String str : arguments) {
           // send via CSV separated value format
           if (str != null) {
@@ -372,30 +330,25 @@ public class FunctionCommands implements GfshCommand {
           for (Object resultObj : results) {
             if (resultObj != null) {
               if (resultObj instanceof String) {
-                resultMessege.append(((String) resultObj));
+                resultMessage.append(((String) resultObj));
               } else if (resultObj instanceof Exception) {
-                resultMessege.append(((Exception) resultObj).getMessage());
+                resultMessage.append(((Exception) resultObj).getMessage());
               } else {
-                resultMessege.append(resultObj);
+                resultMessage.append(resultObj);
               }
             }
           }
         }
-        toTabularResultData(resultTable, member.getId(), resultMessege.toString());
+        toTabularResultData(resultTable, member.getId(), resultMessage.toString());
       } else {
         toTabularResultData(resultTable, member.getId(),
             CliStrings.EXECUTE_FUNCTION__MSG__ERROR_IN_RETRIEVING_EXECUTOR);
       }
-    } catch (FunctionException e) {
-      resultMessege.append(CliStrings.format(
-          CliStrings.EXECUTE_FUNCTION__MSG__COULD_NOT_EXECUTE_FUNCTION_0_ON_MEMBER_1_ERROR_2,
-          functionId, member.getId(), e.getMessage()));
-      toTabularResultData(resultTable, member.getId(), resultMessege.toString());
     } catch (Exception e) {
-      resultMessege.append(CliStrings.format(
+      resultMessage.append(CliStrings.format(
           CliStrings.EXECUTE_FUNCTION__MSG__COULD_NOT_EXECUTE_FUNCTION_0_ON_MEMBER_1_ERROR_2,
           functionId, member.getId(), e.getMessage()));
-      toTabularResultData(resultTable, member.getId(), resultMessege.toString());
+      toTabularResultData(resultTable, member.getId(), resultMessage.toString());
     }
   }
 
@@ -409,23 +362,20 @@ public class FunctionCommands implements GfshCommand {
   @CliCommand(value = CliStrings.DESTROY_FUNCTION, help = CliStrings.DESTROY_FUNCTION__HELP)
   @CliMetaData(relatedTopic = {CliStrings.TOPIC_GEODE_FUNCTION},
       interceptor = "org.apache.geode.management.internal.cli.commands.FunctionCommands$Interceptor")
-  @ResourceOperation(resource = Resource.DATA, operation = Operation.MANAGE)
+  @ResourceOperation(resource = Resource.CLUSTER, operation = Operation.MANAGE, target = Target.JAR)
   // TODO: Add optioncontext for functionId
   public Result destroyFunction(
       @CliOption(key = CliStrings.DESTROY_FUNCTION__ID, mandatory = true,
           help = CliStrings.DESTROY_FUNCTION__HELP) String functionId,
       @CliOption(key = {CliStrings.GROUP, CliStrings.GROUPS},
-          unspecifiedDefaultValue = CliMetaData.ANNOTATION_NULL_VALUE,
           optionContext = ConverterHint.MEMBERGROUP,
           help = CliStrings.DESTROY_FUNCTION__ONGROUPS__HELP) String[] groups,
-      @CliOption(key = CliStrings.MEMBER,
-          unspecifiedDefaultValue = CliMetaData.ANNOTATION_NULL_VALUE,
-          optionContext = ConverterHint.MEMBERIDNAME,
+      @CliOption(key = CliStrings.MEMBER, optionContext = ConverterHint.MEMBERIDNAME,
           help = CliStrings.DESTROY_FUNCTION__ONMEMBER__HELP) String memberId) {
-    Result result = null;
+    Result result;
     try {
       InternalCache cache = getCache();
-      Set<DistributedMember> dsMembers = new HashSet<DistributedMember>();
+      Set<DistributedMember> dsMembers = new HashSet<>();
       if (groups != null && memberId != null) {
         return ResultBuilder
             .createUserErrorResult(CliStrings.DESTROY_FUNCTION__MSG__PROVIDE_OPTION);
@@ -489,7 +439,7 @@ public class FunctionCommands implements GfshCommand {
     // unregister on a set of of members
     Function unregisterFunction = new UnregisterFunction();
     FunctionService.registerFunction(unregisterFunction);
-    List resultList = null;
+    List resultList;
 
     if (DsMembers.isEmpty()) {
       return ResultBuilder.createInfoResult("No members for execution");
@@ -564,9 +514,9 @@ public class FunctionCommands implements GfshCommand {
         } else if (result.isSuccessful()) {
           String[] strings = (String[]) result.getSerializables();
           Arrays.sort(strings);
-          for (int i = 0; i < strings.length; i++) {
+          for (String string : strings) {
             tabularData.accumulate("Member", result.getMemberIdOrName());
-            tabularData.accumulate("Function", strings[i]);
+            tabularData.accumulate("Function", string);
             accumulatedData = true;
           }
         }

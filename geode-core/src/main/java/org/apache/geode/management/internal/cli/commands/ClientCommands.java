@@ -14,7 +14,21 @@
  */
 package org.apache.geode.management.internal.cli.commands;
 
-import org.apache.geode.cache.CacheFactory;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import javax.management.ObjectName;
+
+import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
+import org.springframework.shell.core.annotation.CliCommand;
+import org.springframework.shell.core.annotation.CliOption;
+
 import org.apache.geode.cache.execute.FunctionService;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.internal.cache.InternalCache;
@@ -32,7 +46,6 @@ import org.apache.geode.management.internal.cli.result.CompositeResultData;
 import org.apache.geode.management.internal.cli.result.CompositeResultData.SectionResultData;
 import org.apache.geode.management.internal.cli.result.ResultBuilder;
 import org.apache.geode.management.internal.cli.result.TabularResultData;
-import org.apache.geode.management.internal.cli.shell.Gfsh;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission.Operation;
 import org.apache.geode.security.ResourcePermission.Resource;
@@ -331,7 +344,7 @@ public class ClientCommands implements GfshCommand {
               str[0].substring(str[0].indexOf("=") + 1));
           poolStatsResultTable.accumulate(CliStrings.DESCRIBE_CLIENT_MAX_CONN,
               str[1].substring(str[1].indexOf("=") + 1));
-          poolStatsResultTable.accumulate(CliStrings.DESCRIBE_CLIENT_REDUDANCY,
+          poolStatsResultTable.accumulate(CliStrings.DESCRIBE_CLIENT_REDUNDANCY,
               str[2].substring(str[2].indexOf("=") + 1));
           poolStatsResultTable.accumulate(CliStrings.DESCRIBE_CLIENT_CQs,
               str[3].substring(str[3].indexOf("=") + 1));

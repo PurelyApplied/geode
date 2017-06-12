@@ -23,6 +23,7 @@ import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.distributed.internal.ClusterConfigurationService;
 import org.apache.geode.distributed.internal.InternalLocator;
 import org.apache.geode.internal.cache.InternalCache;
+import org.apache.geode.internal.security.SecurityService;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
@@ -100,6 +101,10 @@ public interface GfshCommand extends CommandMarker {
 
   default InternalCache getCache() {
     return (InternalCache) CacheFactory.getAnyInstance();
+  }
+
+  default SecurityService getSecurityService() {
+    return getCache().getSecurityService();
   }
 
   default Gfsh getGfsh() {
