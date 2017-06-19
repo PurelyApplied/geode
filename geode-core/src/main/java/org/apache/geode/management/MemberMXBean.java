@@ -14,13 +14,13 @@
  */
 package org.apache.geode.management;
 
+import java.util.Map;
+
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission.Operation;
 import org.apache.geode.security.ResourcePermission.Resource;
 import org.apache.geode.security.ResourcePermission.Target;
-
-import java.util.Map;
 
 /**
  * MBean that provides access to information and management functionality for a
