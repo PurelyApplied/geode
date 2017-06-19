@@ -73,7 +73,6 @@ public class FunctionCommands implements GfshCommand {
 
   @CliCommand(value = CliStrings.EXECUTE_FUNCTION, help = CliStrings.EXECUTE_FUNCTION__HELP)
   @CliMetaData(relatedTopic = {CliStrings.TOPIC_GEODE_FUNCTION})
-  // TODO PSR: API security callback?
   @ResourceOperation(resource = Resource.DATA, operation = Operation.WRITE)
   public Result executeFunction(
       // TODO: Add optioncontext for functionID

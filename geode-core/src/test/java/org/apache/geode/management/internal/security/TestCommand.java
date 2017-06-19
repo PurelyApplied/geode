@@ -184,7 +184,6 @@ public class TestCommand {
 
     // FunctionCommands
     // createTestCommand("destroy function --id=InterestCalculations", dataManage);
-    // TODO PSR: Determined by function aPI
     createTestCommand("execute function --id=InterestCalculations --groups=Group1", dataWrite);
     createTestCommand("list functions", clusterRead);
 
