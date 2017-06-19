@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang.BooleanUtils;
-import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 

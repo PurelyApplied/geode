@@ -370,7 +370,7 @@ public interface CacheServerMXBean {
    * Shows a list of client with their queue statistics. Client queue statistics shown in this
    * method are the following
    * 
-   * eventsEnqued,eventsRemoved , eventsConflated ,markerEventsConflated , eventsExpired,
+   * eventsEnqueued,eventsRemoved , eventsConflated ,markerEventsConflated , eventsExpired,
    * eventsRemovedByQrm , eventsTaken , numVoidRemovals
    * 
    * @return an array of ClientQueueDetail
@@ -383,7 +383,7 @@ public interface CacheServerMXBean {
    * Shows queue statistics of the given client. Client queue statistics shown in this method are
    * the following
    * 
-   * eventsEnqued,eventsRemoved , eventsConflated ,markerEventsConflated , eventsExpired,
+   * eventsEnqueued,eventsRemoved , eventsConflated ,markerEventsConflated , eventsExpired,
    * eventsRemovedByQrm , eventsTaken , numVoidRemovals
    * 
    * @param clientId the ID of client which is returned by the attribute ClientIds

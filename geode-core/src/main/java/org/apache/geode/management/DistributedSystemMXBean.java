@@ -323,7 +323,7 @@ public interface DistributedSystemMXBean {
    */
   @ResourceOperation(resource = Resource.CLUSTER, operation = Operation.MANAGE,
       target = Target.DISK)
-  boolean revokeMissingDiskStores(String diskStoreId) throws Exception;
+  boolean revokeMissingDiskStores(String diskStoreId);
 
   /**
    * Returns a list of details for disk stores which have been determined to be unavailable during

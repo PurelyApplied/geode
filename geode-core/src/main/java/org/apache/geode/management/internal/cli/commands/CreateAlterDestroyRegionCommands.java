@@ -308,13 +308,9 @@ public class CreateAlterDestroyRegionCommands implements GfshCommand {
       if (groups != null && groups.length != 0) {
         membersToCreateRegionOn = CliUtil.getDistributedMembersByGroup(cache, groups);
         // have only normal members from the group
-        for (Iterator<DistributedMember> it = membersToCreateRegionOn.iterator(); it.hasNext();) {
-          DistributedMember distributedMember = it.next();
-          if (((InternalDistributedMember) distributedMember)
-              .getVmKind() == DistributionManager.LOCATOR_DM_TYPE) {
-            it.remove();
-          }
-        }
+        membersToCreateRegionOn
+            .removeIf(distributedMember -> ((InternalDistributedMember) distributedMember)
+                .getVmKind() == DistributionManager.LOCATOR_DM_TYPE);
       } else {
         membersToCreateRegionOn = CliUtil.getAllNormalMembers(cache);
       }
@@ -915,7 +911,7 @@ public class CreateAlterDestroyRegionCommands implements GfshCommand {
               } // attributes null check
             } // not IllegalArgumentException or other throwable
           } // iterate over list - there should be only one result in the list
-        } // result list is not null or mpty
+        } // result list is not null or empty
       } // regionAssociatedMembers is not-empty
     } // attributes are null because do not exist on local member
 

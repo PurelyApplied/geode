@@ -122,7 +122,7 @@ public class RegionFunctionArgs implements Serializable {
       this.enableSubscriptionConflation = enableSubscriptionConflation;
     }
     if (cacheListeners != null) {
-      this.cacheListeners = new LinkedHashSet<String>();
+      this.cacheListeners = new LinkedHashSet<>();
       this.cacheListeners.addAll(Arrays.asList(cacheListeners));
     } else {
       this.cacheListeners = null;
@@ -130,13 +130,13 @@ public class RegionFunctionArgs implements Serializable {
     this.cacheLoader = cacheLoader;
     this.cacheWriter = cacheWriter;
     if (asyncEventQueueIds != null) {
-      this.asyncEventQueueIds = new LinkedHashSet<String>();
+      this.asyncEventQueueIds = new LinkedHashSet<>();
       this.asyncEventQueueIds.addAll(Arrays.asList(asyncEventQueueIds));
     } else {
       this.asyncEventQueueIds = null;
     }
     if (gatewaySenderIds != null) {
-      this.gatewaySenderIds = new LinkedHashSet<String>();
+      this.gatewaySenderIds = new LinkedHashSet<>();
       this.gatewaySenderIds.addAll(Arrays.asList(gatewaySenderIds));
     } else {
       this.gatewaySenderIds = null;
@@ -527,7 +527,7 @@ public class RegionFunctionArgs implements Serializable {
     }
 
     public ExpirationAttributes convertToExpirationAttributes() {
-      ExpirationAttributes expirationAttr = null;
+      ExpirationAttributes expirationAttr;
       if (action != null) {
         expirationAttr = new ExpirationAttributes(time, action);
       } else {
@@ -590,8 +590,8 @@ public class RegionFunctionArgs implements Serializable {
       }
     }
 
-    public static enum ExpirationFor {
-      REGION_IDLE, REGION_TTL, ENTRY_IDLE, ENTRY_TTL;
+    public enum ExpirationFor {
+      REGION_IDLE, REGION_TTL, ENTRY_IDLE, ENTRY_TTL
     }
   }
 
@@ -615,7 +615,7 @@ public class RegionFunctionArgs implements Serializable {
     private String partitionResolver;
 
     private boolean hasPartitionAttributes;
-    private final Set<String> userSpecifiedPartitionAttributes = new HashSet<String>();
+    private final Set<String> userSpecifiedPartitionAttributes = new HashSet<>();
 
     public PartitionArgs(String prColocatedWith, Integer prLocalMaxMemory, Long prRecoveryDelay,
         Integer prRedundantCopies, Long prStartupRecoveryDelay, Long prTotalMaxMemory,

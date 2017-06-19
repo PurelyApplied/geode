@@ -248,7 +248,7 @@ public class DistributedSystemMBean extends NotificationBroadcasterSupport
   }
 
   @Override
-  public boolean revokeMissingDiskStores(final String diskStoreId) throws Exception {
+  public boolean revokeMissingDiskStores(final String diskStoreId) {
     return bridge.revokeMissingDiskStores(diskStoreId);
   }
 
@@ -438,6 +438,6 @@ public class DistributedSystemMBean extends NotificationBroadcasterSupport
 
   @Override
   public void setQueryCollectionsDepth(int queryCollectionsDepth) {
-    bridge.setQueryCollectionsDepth(queryCollectionsDepth);;
+    bridge.setQueryCollectionsDepth(queryCollectionsDepth);
   }
 }

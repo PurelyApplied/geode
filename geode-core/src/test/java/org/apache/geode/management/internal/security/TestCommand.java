@@ -282,5 +282,5 @@ public class TestCommand {
 
     // Misc commands
     // createTestCommand("shutdown", clusterManage);
-  };
+  }
 }

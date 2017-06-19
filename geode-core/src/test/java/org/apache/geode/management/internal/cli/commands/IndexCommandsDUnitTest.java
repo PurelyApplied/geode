@@ -108,7 +108,7 @@ public class IndexCommandsDUnitTest extends CliCommandTestBase {
     diskStoreFactory.setAutoCompact(false);
     diskStoreFactory.create(diskStoreName);
 
-    /****
+    /*
      * Eviction Attributes
      */
     EvictionAttributes ea =
@@ -140,7 +140,7 @@ public class IndexCommandsDUnitTest extends CliCommandTestBase {
     diskStoreFactory.setAutoCompact(false);
     diskStoreFactory.create(diskStoreName);
 
-    /****
+    /*
      * Eviction Attributes
      */
     EvictionAttributes ea =
@@ -186,7 +186,7 @@ public class IndexCommandsDUnitTest extends CliCommandTestBase {
 
   public void testCreateAndDestroyIndex() {
     setupSystem();
-    /***
+    /*
      * Basic Create and Destroy
      */
     CommandStringBuilder csb = new CommandStringBuilder(CliStrings.CREATE_INDEX);
@@ -322,7 +322,7 @@ public class IndexCommandsDUnitTest extends CliCommandTestBase {
   @Test
   public void testCreateAndDestroyIndexOnMember() {
     setupSystem();
-    /***
+    /*
      * Basic Create and Destroy
      */
     CommandStringBuilder csb = new CommandStringBuilder(CliStrings.CREATE_INDEX);
@@ -373,7 +373,7 @@ public class IndexCommandsDUnitTest extends CliCommandTestBase {
   @Test
   public void testCreateAndDestroyIndexOnGroup() {
     setupSystem();
-    /***
+    /*
      * Basic Create and Destroy
      */
     CommandStringBuilder csb = new CommandStringBuilder(CliStrings.CREATE_INDEX);
@@ -414,7 +414,7 @@ public class IndexCommandsDUnitTest extends CliCommandTestBase {
     assertEquals(commandResult.getStatus(), Status.OK);
     assertFalse(resultAsString.contains(VM1Name));
 
-    /***
+    /*
      * In case of a partitioned region , the index might get created on a member which hosts the
      * region and is not the member of the group1
      */

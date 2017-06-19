@@ -33,7 +33,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
@@ -127,7 +126,7 @@ public class DiskStoreCommands implements GfshCommand {
     try {
       InternalCache cache = getCache();
       DM dm = cache.getDistributionManager();
-      BackupStatus backupStatus = null;
+      BackupStatus backupStatus;
 
       if (baselineDir != null && !baselineDir.isEmpty()) {
         backupStatus = AdminDistributedSystemImpl.backupAllMembers(dm, new File(targetDir),
@@ -163,11 +162,11 @@ public class DiskStoreCommands implements GfshCommand {
               String directory = persistentId.getDirectory();
 
               if (printMember) {
-                writeToBackupDisktoreTable(backedupDiskStoresTable, memberName, UUID, hostName,
+                writeToBackupDiskStoreTable(backedupDiskStoresTable, memberName, UUID, hostName,
                     directory);
                 printMember = false;
               } else {
-                writeToBackupDisktoreTable(backedupDiskStoresTable, "", UUID, hostName, directory);
+                writeToBackupDiskStoreTable(backedupDiskStoresTable, "", UUID, hostName, directory);
               }
             }
           }
@@ -201,8 +200,8 @@ public class DiskStoreCommands implements GfshCommand {
     return result;
   }
 
-  private void writeToBackupDisktoreTable(TabularResultData backedupDiskStoreTable, String memberId,
-      String UUID, String host, String directory) {
+  private void writeToBackupDiskStoreTable(TabularResultData backedupDiskStoreTable,
+      String memberId, String UUID, String host, String directory) {
     backedupDiskStoreTable.accumulate(CliStrings.BACKUP_DISK_STORE_MSG_MEMBER, memberId);
     backedupDiskStoreTable.accumulate(CliStrings.BACKUP_DISK_STORE_MSG_UUID, UUID);
     backedupDiskStoreTable.accumulate(CliStrings.BACKUP_DISK_STORE_MSG_DIRECTORY, directory);

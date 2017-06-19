@@ -217,7 +217,7 @@ public class LuceneCommandsSecurityDUnitTest {
     assertTrue(this.gfshShell.getGfshOutput().contains(user.getExpectedResponse()));
   }
 
-  private String getCreateIndexCommand() throws Exception {
+  private String getCreateIndexCommand() {
     CommandStringBuilder csb = new CommandStringBuilder(LuceneCliStrings.LUCENE_CREATE_INDEX);
     csb.addOption(LuceneCliStrings.LUCENE__INDEX_NAME, INDEX_NAME);
     csb.addOption(LuceneCliStrings.LUCENE__REGION_PATH, REGION_NAME);
@@ -225,7 +225,7 @@ public class LuceneCommandsSecurityDUnitTest {
     return csb.toString();
   }
 
-  private String getCreateRegionCommand() throws Exception {
+  private String getCreateRegionCommand() {
     CommandStringBuilder csb = new CommandStringBuilder(CliStrings.CREATE_REGION);
     csb.addOption(CliStrings.CREATE_REGION__REGION, REGION_NAME);
     csb.addOption(CliStrings.CREATE_REGION__REGIONSHORTCUT,
@@ -233,7 +233,7 @@ public class LuceneCommandsSecurityDUnitTest {
     return csb.toString();
   }
 
-  private String getSearchIndexCommand() throws Exception {
+  private String getSearchIndexCommand() {
     CommandStringBuilder csb = new CommandStringBuilder(LuceneCliStrings.LUCENE_SEARCH_INDEX);
     csb.addOption(LuceneCliStrings.LUCENE__INDEX_NAME, INDEX_NAME);
     csb.addOption(LuceneCliStrings.LUCENE__REGION_PATH, REGION_NAME);
@@ -242,19 +242,19 @@ public class LuceneCommandsSecurityDUnitTest {
     return csb.toString();
   }
 
-  private String getListIndexesCommand() throws Exception {
+  private String getListIndexesCommand() {
     CommandStringBuilder csb = new CommandStringBuilder(LuceneCliStrings.LUCENE_LIST_INDEX);
     return csb.toString();
   }
 
-  private String getDescribeIndexCommand() throws Exception {
+  private String getDescribeIndexCommand() {
     CommandStringBuilder csb = new CommandStringBuilder(LuceneCliStrings.LUCENE_DESCRIBE_INDEX);
     csb.addOption(LuceneCliStrings.LUCENE__INDEX_NAME, INDEX_NAME);
     csb.addOption(LuceneCliStrings.LUCENE__REGION_PATH, REGION_NAME);
     return csb.toString();
   }
 
-  private String getDestroyIndexCommand() throws Exception {
+  private String getDestroyIndexCommand() {
     CommandStringBuilder csb = new CommandStringBuilder(LuceneCliStrings.LUCENE_DESTROY_INDEX);
     csb.addOption(LuceneCliStrings.LUCENE__INDEX_NAME, INDEX_NAME);
     csb.addOption(LuceneCliStrings.LUCENE__REGION_PATH, REGION_NAME);

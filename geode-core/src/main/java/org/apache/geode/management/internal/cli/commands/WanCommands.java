@@ -230,7 +230,7 @@ public class WanCommands implements GfshCommand {
 
         callables.add(() -> {
 
-          GatewaySenderMXBean bean = null;
+          GatewaySenderMXBean bean;
           ArrayList<String> statusList = new ArrayList<>();
           if (cache.getDistributedSystem().getDistributedMember().getId().equals(member.getId())) {
             bean = service.getLocalGatewaySenderMXBean(id);
@@ -279,14 +279,10 @@ public class WanCommands implements GfshCommand {
           memberStatus = future.get();
           accumulateStartResult(resultData, memberStatus.get(0), memberStatus.get(1),
               memberStatus.get(2));
-        } catch (InterruptedException ite) {
+        } catch (InterruptedException | ExecutionException ite) {
           accumulateStartResult(resultData, member.getId(), CliStrings.GATEWAY_ERROR,
               CliStrings.format(CliStrings.GATEWAY_SENDER_0_COULD_NOT_BE_STARTED_ON_MEMBER_DUE_TO_1,
                   id, ite.getMessage()));
-        } catch (ExecutionException ee) {
-          accumulateStartResult(resultData, member.getId(), CliStrings.GATEWAY_ERROR,
-              CliStrings.format(CliStrings.GATEWAY_SENDER_0_COULD_NOT_BE_STARTED_ON_MEMBER_DUE_TO_1,
-                  id, ee.getMessage()));
         }
       }
       execService.shutdown();

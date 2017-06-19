@@ -16,9 +16,11 @@ package org.apache.geode.cache.lucene.internal.cli;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -119,7 +121,7 @@ public class LuceneIndexCommands implements GfshCommand {
         (List<Set<LuceneIndexDetails>>) resultsCollector.getResult();
 
     List<LuceneIndexDetails> sortedResults =
-        results.stream().flatMap(set -> set.stream()).sorted().collect(Collectors.toList());
+        results.stream().flatMap(Collection::stream).sorted().collect(Collectors.toList());
     LinkedHashSet<LuceneIndexDetails> uniqResults = new LinkedHashSet<>();
     uniqResults.addAll(sortedResults);
     sortedResults.clear();
@@ -189,8 +191,7 @@ public class LuceneIndexCommands implements GfshCommand {
     try {
       final InternalCache cache = getCache();
       // trim fields for any leading trailing spaces.
-      String[] trimmedFields =
-          Arrays.stream(fields).map(field -> field.trim()).toArray(size -> new String[size]);
+      String[] trimmedFields = Arrays.stream(fields).map(String::trim).toArray(String[]::new);
       LuceneIndexInfo indexInfo =
           new LuceneIndexInfo(indexName, regionPath, trimmedFields, analyzers);
       final ResultCollector<?, ?> rc =
@@ -263,8 +264,7 @@ public class LuceneIndexCommands implements GfshCommand {
     final ResultCollector<?, ?> rc =
         executeFunctionOnRegion(describeIndexFunction, indexInfo, true);
     final List<LuceneIndexDetails> funcResults = (List<LuceneIndexDetails>) rc.getResult();
-    return funcResults.stream().filter(indexDetails -> indexDetails != null)
-        .collect(Collectors.toList());
+    return funcResults.stream().filter(Objects::nonNull).collect(Collectors.toList());
   }
 
   /**
@@ -540,7 +540,7 @@ public class LuceneIndexCommands implements GfshCommand {
     final List<Set<LuceneSearchResults>> functionResults =
         (List<Set<LuceneSearchResults>>) rc.getResult();
 
-    return functionResults.stream().flatMap(set -> set.stream()).sorted()
+    return functionResults.stream().flatMap(Collection::stream).sorted()
         .collect(Collectors.toList());
   }
 
