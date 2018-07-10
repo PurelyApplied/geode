@@ -33,14 +33,14 @@ TEST_FAILURE_REGEX = re.compile('(\S+)\s*>\s*(\S+).*FAILED')
 
 def main(url, pipeline, job, build_count, team, max_fetch_count, authorization_cookie):
     session = requests.Session()
-    builds = get_builds_sheet(authorization_cookie, job, max_fetch_count, pipeline, session, team, url)
-    builds_to_analyze = identify_completed_builds(build_count, builds, max_fetch_count)
-    assert len(builds_to_analyze) == build_count, "Something strange has happened in build analysis sizing."
+    builds = get_builds_summary_sheet(authorization_cookie, job, max_fetch_count, pipeline, session, team, url)
+
+    completed_builds = get_builds_to_analyze(build_count, builds, max_fetch_count)
 
     failures = {} # test name -> [builds, ...]
 
     failed_build_count = 0
-    for build in tqdm(builds_to_analyze, desc="Build pages examined"):
+    for build in tqdm(completed_builds, desc="Build pages examined"):
         failed_build_count = examine_build(authorization_cookie, build, failures, session, url)
 
     present_results(build_count, failed_build_count, failures, url)
@@ -136,23 +136,42 @@ def check_line_for_failure(build, failures, line) -> bool:
     return was_failure
 
 
-def identify_completed_builds(build_count, builds, max_fetch_count):
-    sorted_builds = sorted(builds, key=itemgetter('id'), reverse=True)
-    completed_build_states = ['succeeded', 'failed']
-    completed_builds = [b for b in sorted_builds if b['status'] in completed_build_states]
+def get_builds_to_analyze(build_count, builds, max_fetch_count):
+    # possible build statuses:
+    # {'failed', 'aborted', 'succeeded', 'errored'}
+    # Probably also 'pending'
+
+    succeeded, failed, aborted, errored, pending = sieve(builds, lambda b: b['status'], 'succeeded', 'failed', 'aborted', 'errored', 'pending')
+    completed_builds = succeeded + failed
+    completed_builds.sort(key=itemgetter('id'), reverse=True)
+    builds_to_analyze = completed_builds[:build_count]
+    logging.info(f"Of {len(builds)} runs examined: {len(succeeded)} succeeded, {len(failed)} failed, {len(aborted)} aborted, {len(errored)} errored, {len(pending)} pending")
+
     if len(completed_builds) < build_count:
         raise RuntimeError(
             "The build report fetch was limited to the {} most recent builds, with only {} of these completed.  "
             "This cannot satisfy the desired target of {} jobs to analyze.".format(
                 max_fetch_count, len(completed_builds), build_count))
-    return completed_builds[:build_count]
+
+    logging.info(f"Examining {build_count} most recent completed builds: {builds_to_analyze[-1]['name']} - {builds_to_analyze[0]['name']}")
+    return builds_to_analyze
 
 
-def get_builds_sheet(authorization_cookie, job, max_fetch_count, pipeline, session, team, url):
+def get_builds_summary_sheet(authorization_cookie, job, max_fetch_count, pipeline, session, team, url):
     builds_url = '{}/api/v1/teams/{}/pipelines/{}/jobs/{}/builds'.format(url, team, pipeline, job)
     build_params = {'limit': max_fetch_count}
     build_response = session.get(builds_url, cookies=authorization_cookie, params=build_params)
     return build_response.json()
+
+
+def sieve(iterable, inspector, *keys):
+    s = {k: [] for k in keys}
+    for item in iterable:
+        k = inspector(item)
+        if k not in s:
+            raise KeyError(f"Unexpected key {k} found by inspector in sieve.")
+        s[inspector(item)].append(item)
+    return [s[k] for k in keys]
 
 
 if __name__ == '__main__':
