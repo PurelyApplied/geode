@@ -14,13 +14,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
 import argparse
 import json
 import logging
 import re
 from operator import itemgetter
+from pprint import pprint
 from urllib.parse import urlparse
 
 import requests
@@ -32,6 +32,16 @@ BUILD_FAIL_REGEX = re.compile('BUILD FAILED|Test Failed!')
 TEST_FAILURE_REGEX = re.compile('(\S+)\s*>\s*(\S+).*FAILED')
 BUILD_HANG_REGEX = re.compile('timeout exceeded')
 BUILD_HANG_CAPTURE_STACKS = re.compile('Capturing call stacks(.*)timeout exceeded')
+
+
+class BuildSummary:
+    def __init__(self):
+        pass
+
+
+class BuildReport:
+    def __init__(self, build_json):
+        pass
 
 
 def main(url, team, pipeline, job, max_fetch_count, build_count, authorization_cookie):
@@ -49,14 +59,7 @@ def main(url, team, pipeline, job, max_fetch_count, build_count, authorization_c
         _, this_failure_count = examine_build(authorization_cookie, build, session, url, failures)
         failed_build_count += this_failure_count
 
-    present_results(build_count, failed_build_count, failures, url)
-
-
-def merge_failures(*dictionaries):
-    dictionaries = list(dictionaries)
-    d = dictionaries.pop()
-    for other_dict in dictionaries:
-        pass
+    present_results(len(build_to_examine), failed_build_count, failures, url)
 
 
 def examine_build(authorization_cookie, build, session, url, failures):
@@ -81,25 +84,28 @@ def assess_event_output_for_failure(build, event_output, failures):
 
 
 def assess_event_response(event_response):
-    event_output = ''
+    event_outputs = []
     build_status = 'unknown'
     event_client = sseclient.SSEClient(event_response)
+    aggregated_events = []
+
     for event in event_client.events():
-        if event.event == 'end':
-            break
-        if event.data:
-            event_json = json.loads(event.data)
-            event_data = event_json['data']
+        event_json = json.loads(event.data if event.data else "{}")
+        build_status = event_json['data']['status'] if event_json.get('event', 'not-a-status-event') == 'status' else build_status
+        if event.event == 'end' or event_json['event'] == 'status' and build_status == 'succeeded':
+            return build_status, ''.join(event_outputs)
+        elif event.data:
+            # event_json = json.loads(event.data)
             if event_json['event'] == 'status':
-                build_status = event_data['status']
+                # build_status = event_json['data']['status']
                 if build_status == 'succeeded':
-                    break
-            if event_json['event'] == 'log':
-                event_output += event_data['payload']
+                    return build_status, ''.join(event_outputs)
+            elif event_json['event'] == 'log':
+                event_outputs.append(event_json['data']['payload'])
 
             logging.debug("***************************************************")
             logging.debug("Event *{}* - {}".format(event.event, json.loads(event.data)))
-    return build_status, event_output
+    raise RuntimeError("This should be unreachable.")
 
 
 def get_event_response(authorization_cookie, build, session, url):
@@ -152,30 +158,51 @@ def check_line_for_failure(build, failures, line) -> bool:
 
 
 def get_builds_to_examine(builds, build_count):
+    """
+    :param builds: Build summary JSON
+    :param build_count: number of completed builds to return.  Return all if 0
+    """
     # possible build statuses:
-    # {'failed', 'aborted', 'succeeded', 'errored', 'started'}
-    # Probably also 'pending'
-
-    succeeded, failed, aborted, errored, pending, started = sieve(builds, lambda b: b['status'], 'succeeded', 'failed', 'aborted', 'errored', 'pending', 'started')
+    statuses = ['succeeded', 'failed', 'aborted', 'errored', 'pending', 'started']
+    # TODO: verify 'pending'
+    succeeded, failed, aborted, errored, pending, started = sieve(builds, lambda b: b['status'], *statuses)
     completed_builds = succeeded + failed
     completed_builds.sort(key=itemgetter('id'), reverse=True)
-    builds_to_analyze = completed_builds[:build_count]
-    logging.info(f"Of {len(builds)} runs examined: {len(succeeded)} succeeded, {len(failed)} failed, {len(aborted)} aborted, {len(errored)} errored, {len(pending)} pending, {len(started)} started")
+    builds_to_analyze = completed_builds[:build_count] if build_count else completed_builds
+    logging.info(f"{len(aborted)} aborted builds in examination range: {list_and_sort_by_name(aborted)}")
+    logging.info(f"{len(errored)} errored builds in examination range: {list_and_sort_by_name(errored)}")
+    logging.info(f"{len(pending)} pending builds in examination range: {list_and_sort_by_name(pending)}")
+    logging.info(f"{len(started)} started builds in examination range: {list_and_sort_by_name(started)}")
 
-    if len(completed_builds) < build_count:
+    if build_count and len(completed_builds) < build_count:
         raise RuntimeError(
             "The build report returned the {} most recent builds, with only {} of these completed.  "
             "This cannot satisfy the desired target of {} jobs to analyze.".format(
                 len(builds), len(completed_builds), build_count))
 
-    logging.info(f"Examining {build_count} most recent completed builds: {builds_to_analyze[-1]['name']} - {builds_to_analyze[0]['name']}")
+    first_build = builds_to_analyze[-1]['name']
+    last_build = builds_to_analyze[0]['name']
+    build_count_str = str(build_count) if build_count else "*all* of the"
+    logging.info(f"{len(started)} completed builds to examine, ranging "
+                 f"{first_build} - {last_build}: {list_and_sort_by_name(builds_to_analyze)}")
     return builds_to_analyze
 
 
+def list_and_sort_by_name(builds):
+    return sorted([int(b['name']) for b in builds], reverse=True)
+
 def get_builds_summary_sheet(url, team, pipeline, job, max_fetch_count, session, authorization_cookie):
+    if max_fetch_count == 0:
+        # Snoop the top result's name to discover the number of jobs that have been queued.
+        snoop = get_builds_summary_sheet(url, team, pipeline, job, 1, session, authorization_cookie)
+        max_fetch_count = int(snoop[0]['name'])
+        logging.info(f"Snooped: fetching a full history of {max_fetch_count} builds.")
+
     builds_url = '{}/api/v1/teams/{}/pipelines/{}/jobs/{}/builds'.format(url, team, pipeline, job)
     build_params = {'limit': max_fetch_count}
     build_response = session.get(builds_url, cookies=authorization_cookie, params=build_params)
+    if build_response.status_code != 200:
+        raise IOError("Initial build summary query returned status code {build_response.status_code}.")
     return build_response.json()
 
 
@@ -201,7 +228,7 @@ if __name__ == '__main__':
                         help="Name of job.",
                         type=str)
     parser.add_argument('limit',
-                        help="Number of completed jobs to examine.",
+                        help="Number of completed jobs to examine.  Enter 0 to examine all jobs fetched.",
                         type=int,
                         nargs='?',
                         default=50)
