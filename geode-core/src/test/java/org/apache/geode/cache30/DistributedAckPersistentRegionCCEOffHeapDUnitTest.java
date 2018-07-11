@@ -22,7 +22,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import org.apache.geode.cache.AttributesFactory;
+import org.apache.geode.cache.DataPolicy;
 import org.apache.geode.cache.RegionAttributes;
+import org.apache.geode.cache.Scope;
 import org.apache.geode.internal.cache.OffHeapTestUtil;
 import org.apache.geode.test.dunit.Invoke;
 import org.apache.geode.test.dunit.SerializableRunnable;
@@ -70,7 +72,11 @@ public class DistributedAckPersistentRegionCCEOffHeapDUnitTest
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   protected RegionAttributes getRegionAttributes() {
-    RegionAttributes attrs = super.getRegionAttributes();
+    AttributesFactory factory1 = new AttributesFactory();
+    factory1.setScope(Scope.DISTRIBUTED_ACK);
+    factory1.setDataPolicy(DataPolicy.PERSISTENT_REPLICATE);
+    factory1.setConcurrencyChecksEnabled(true);
+    RegionAttributes attrs = factory1.create();
     AttributesFactory factory = new AttributesFactory(attrs);
     factory.setOffHeap(true);
     return factory.create();
@@ -79,18 +85,17 @@ public class DistributedAckPersistentRegionCCEOffHeapDUnitTest
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   protected RegionAttributes getRegionAttributes(String type) {
-    RegionAttributes ra = super.getRegionAttributes(type);
+    RegionAttributes ra1 = getCache().getRegionAttributes(type);
+    if (ra1 == null) {
+      throw new IllegalStateException("The region shortcut " + type + " has been removed.");
+    }
+    AttributesFactory factory1 = new AttributesFactory(ra1);
+    factory1.setConcurrencyChecksEnabled(true);
+    RegionAttributes ra = factory1.create();
     AttributesFactory factory = new AttributesFactory(ra);
     if (!ra.getDataPolicy().isEmpty()) {
       factory.setOffHeap(true);
     }
     return factory.create();
-  }
-
-  @Category(FlakyTest.class) // GEODE-3451
-  @Override
-  @Test
-  public void testConcurrentEventsOnEmptyRegion() {
-    super.testConcurrentEventsOnEmptyRegion();
   }
 }

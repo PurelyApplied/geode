@@ -59,7 +59,7 @@ import org.apache.geode.test.junit.runners.CategoryWithParameterizedRunnerFactor
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(CategoryWithParameterizedRunnerFactory.class)
 public class ClientServerMiscBCDUnitTest extends ClientServerMiscDUnitTest {
-  @Parameterized.Parameters
+  @Parameterized.Parameters(name = "version={0}")
   public static Collection<String> data() {
     List<String> result = VersionManager.getInstance().getVersionsWithoutCurrent();
     if (result.size() < 1) {

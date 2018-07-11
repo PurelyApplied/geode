@@ -59,10 +59,15 @@ public class CqResultSetUsingPoolDUnitTest extends JUnit4CacheTestCase {
   private final String selStr = "SELECT * FROM /root/regionA";
 
   /** Supported queries */
-  public final String[] condition = new String[] {/* 0 */ " p WHERE p.ID > 3",
-      /* 1 */ " p WHERE p.ID < 3", /* 2 */ "   WHERE   ID = 3", /* 3 */ " p WHERE p.ID >= 3",
-      /* 4 */ " p WHERE p.ID <= 3", /* 5 */ " p WHERE p.ID > 3 AND p.status = 'active'",
-      /* 6 */ "   WHERE   status = 'active' AND ID < 3", /* 7 */ " p WHERE p.names[0] = 'aaa'",
+  public final String[] condition = new String[] {
+      /* 0 */ " p WHERE p.ID > 3",
+      /* 1 */ " p WHERE p.ID < 3",
+      /* 2 */ "   WHERE   ID = 3",
+      /* 3 */ " p WHERE p.ID >= 3",
+      /* 4 */ " p WHERE p.ID <= 3",
+      /* 5 */ " p WHERE p.ID > 3 AND p.status = 'active'",
+      /* 6 */ "   WHERE   status = 'active' AND ID < 3",
+      /* 7 */ " p WHERE p.names[0] = 'aaa'",
       /* 8 */ " p WHERE p.status LIKE 'active'",
       /* 9 */ " p WHERE p.collectionHolderMap.get('1').arr[0] = '0'",
       /* 10 */ " p WHERE p.position1.portfolioId > 3",
@@ -94,14 +99,15 @@ public class CqResultSetUsingPoolDUnitTest extends JUnit4CacheTestCase {
 
   /** Unsupported queries */
   public final String[] condition2 =
-      new String[] {/* 0 */ " p1, /root/regionB p2 WHERE p1.status = p2.status",
-          /* 1 */ " p, p.positions.values p1 WHERE p1.secId = 'IBM'",
-          /* 2 */ " p, p.positions.values AS pos WHERE pos.secId != '1'",
-          /* 3 */ " p WHERE p.ID in (SELECT p1.ID FROM /root/regionA p1 WHERE p1.ID > 3)",
-          /* 4 */ ".entries entry WHERE entry.key = '1'",
-          /* 5 */ ".entries entry WHERE entry.value.ID > '3'",
-          /* 6 */ ".values p WHERE p.ID > '3' and p.status = 'active'",
-          /* 7 */ " p, p.position3 pos where pos.portfolioId  = 1",};
+      new String[] {
+        /* 0 */ " p1, /root/regionB p2 WHERE p1.status = p2.status",
+        /* 1 */ " p, p.positions.values p1 WHERE p1.secId = 'IBM'",
+        /* 2 */ " p, p.positions.values AS pos WHERE pos.secId != '1'",
+        /* 3 */ " p WHERE p.ID in (SELECT p1.ID FROM /root/regionA p1 WHERE p1.ID > 3)",
+        /* 4 */ ".entries entry WHERE entry.key = '1'",
+        /* 5 */ ".entries entry WHERE entry.value.ID > '3'",
+        /* 6 */ ".values p WHERE p.ID > '3' and p.status = 'active'",
+        /* 7 */ " p, p.position3 pos where pos.portfolioId  = 1",};
 
 
   public CqResultSetUsingPoolDUnitTest() {

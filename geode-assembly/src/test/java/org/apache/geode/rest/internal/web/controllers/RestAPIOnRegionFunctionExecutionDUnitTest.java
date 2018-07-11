@@ -74,7 +74,7 @@ public class RestAPIOnRegionFunctionExecutionDUnitTest extends RestAPITestBase {
   @Parameterized.Parameter
   public String urlContext;
 
-  @Parameterized.Parameters
+  @Parameterized.Parameters(name = "endpoint={0}")
   public static Collection<String> data() {
     return Arrays.asList("/geode", "/gemfire-api");
   }

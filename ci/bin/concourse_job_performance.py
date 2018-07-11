@@ -20,7 +20,6 @@ import json
 import logging
 import re
 from operator import itemgetter
-from pprint import pprint
 from urllib.parse import urlparse
 
 import requests
@@ -44,6 +43,10 @@ class BuildReport:
         pass
 
 
+class Worker:
+    pass
+
+
 def main(url, team, pipeline, job, max_fetch_count, build_count, authorization_cookie):
     session = requests.Session()
     builds = get_builds_summary_sheet(url, team, pipeline, job, max_fetch_count, session, authorization_cookie)
@@ -52,7 +55,8 @@ def main(url, team, pipeline, job, max_fetch_count, build_count, authorization_c
     expected_failed_builds_count = sum(b['status'] == 'failed' for b in build_to_examine)
     logging.info(f"Expecting {expected_failed_builds_count} runs to have failure strings.")
 
-    failures = {} # test name -> [builds, ...]
+    # test name -> [builds, ...]
+    failures = {}
 
     failed_build_count = 0
     for build in tqdm(build_to_examine, desc="Build pages examined"):
@@ -78,7 +82,19 @@ def examine_build(authorization_cookie, build, session, url, failures):
 def assess_event_output_for_failure(build, event_output, failures):
     n_failures = 0
     for line in event_output.splitlines():
-        was_failure = check_line_for_failure(build, failures, line)
+        """Returns true if no failure is found, false if a failure is found."""
+        build_fail_matcher = BUILD_FAIL_REGEX.search(line)
+        was_failure = bool(build_fail_matcher)
+        test_failure_matcher = TEST_FAILURE_REGEX.search(line)
+        if test_failure_matcher:
+            class_name, method_name = test_failure_matcher.groups()
+            this_failure = SingleFailure(class_name, method_name, build)
+            test_name = ".".join((this_failure.class_name, this_failure.method))
+            if not failures.get(test_name):
+                failures[test_name] = [build]
+            else:
+                failures[test_name].append(build)
+            logging.debug(f"Failure identified, {this_failure}")
         n_failures += 1 if was_failure else 0
     return n_failures
 
@@ -115,12 +131,11 @@ def get_event_response(authorization_cookie, build, session, url):
     return event_response
 
 
-def present_results(completed_build_count, failed_build_count, failures, url):
-    if failed_build_count > 0:
+def present_results(completed, failed, failures, url):
+    if failed > 0:
+        rate = (completed - failed) * 100 / completed
         print(color("***********************************************************************************", fg='yellow'))
-        print(" Overall build success rate: ",
-              color("{}%".format((completed_build_count - failed_build_count) * 100 / completed_build_count),
-                    fg='blue'))
+        print(" Overall build success rate:", color(f"{rate:.5f}% ({completed - failed} of {completed})", fg='blue'))
         print(color("***********************************************************************************", fg='yellow'))
         if failures:
             for failure in failures.keys():
@@ -128,18 +143,25 @@ def present_results(completed_build_count, failed_build_count, failures, url):
                 print(color("{}: ".format(failure), fg='cyan'),
                       color("{} failures".format(count), fg='red'),
                       color(
-                          "({}% success rate)".format(((completed_build_count - count) / completed_build_count) * 100),
+                          "({}% success rate)".format(((completed - count) / completed) * 100),
                           fg='blue'))
                 for build in failures[failure]:
-                    print(color("  Failed build {} ".format(build['name']), fg='red'),
-                          color("at {}/teams/{}/pipelines/{}/jobs/{}/builds/{}".format(url,
-                                                                                       build['team_name'],
-                                                                                       build['pipeline_name'],
-                                                                                       build['job_name'],
-                                                                                       build['name']),
-                                fg='magenta', style='bold'))
+                    failed_build_url = (f"{url}/teams/{build['team_name']}/pipelines/"
+                                        f"{build['pipeline_name']}/jobs/{build['job_name']}/builds/{build['name']}")
+                    print(color(f"  Failed build {build['name']} ", fg='red'),
+                          color(f"at {failed_build_url}", fg='magenta', style='bold'))
     else:
         print(color("No failures! 100% success rate", fg='green', style='bold'))
+
+
+class SingleFailure:
+    def __init__(self, class_name, method, build_json):
+        self.class_name = class_name
+        self.method = method
+        self.build_json = build_json
+
+    def __str__(self):
+        return f"Failure({self.class_name}, {self.method}, ({self.build_json['name']} ...))"
 
 
 def check_line_for_failure(build, failures, line) -> bool:
@@ -148,12 +170,14 @@ def check_line_for_failure(build, failures, line) -> bool:
     was_failure = bool(build_fail_matcher)
     test_failure_matcher = TEST_FAILURE_REGEX.search(line)
     if test_failure_matcher:
-        test_name = ".".join(test_failure_matcher.groups())
+        class_name, method_name = test_failure_matcher.groups()
+        this_failure = SingleFailure(class_name, method_name, build)
+        test_name = ".".join((this_failure.class_name, this_failure.method))
         if not failures.get(test_name):
             failures[test_name] = [build]
         else:
             failures[test_name].append(build)
-        logging.debug("Failure information: {} - {}".format(*test_failure_matcher.groups()))
+        logging.debug(f"Failure identified, {this_failure}")
     return was_failure
 
 
@@ -182,14 +206,15 @@ def get_builds_to_examine(builds, build_count):
 
     first_build = builds_to_analyze[-1]['name']
     last_build = builds_to_analyze[0]['name']
-    build_count_str = str(build_count) if build_count else "*all* of the"
     logging.info(f"{len(started)} completed builds to examine, ranging "
                  f"{first_build} - {last_build}: {list_and_sort_by_name(builds_to_analyze)}")
+    logging.info(f"{len(failed)} expected failures: {list_and_sort_by_name(failed)}")
     return builds_to_analyze
 
 
 def list_and_sort_by_name(builds):
     return sorted([int(b['name']) for b in builds], reverse=True)
+
 
 def get_builds_summary_sheet(url, team, pipeline, job, max_fetch_count, session, authorization_cookie):
     if max_fetch_count == 0:
