@@ -30,31 +30,44 @@ from tqdm import tqdm
 
 BUILD_FAIL_REGEX = re.compile('BUILD FAILED|Test Failed!')
 TEST_FAILURE_REGEX = re.compile('(\S+)\s*>\s*(\S+).*FAILED')
+BUILD_HANG_REGEX = re.compile('timeout exceeded')
+BUILD_HANG_CAPTURE_STACKS = re.compile('Capturing call stacks(.*)timeout exceeded')
 
-def main(url, pipeline, job, build_count, team, max_fetch_count, authorization_cookie):
+
+def main(url, team, pipeline, job, max_fetch_count, build_count, authorization_cookie):
     session = requests.Session()
-    builds = get_builds_summary_sheet(authorization_cookie, job, max_fetch_count, pipeline, session, team, url)
+    builds = get_builds_summary_sheet(url, team, pipeline, job, max_fetch_count, session, authorization_cookie)
 
-    completed_builds = get_builds_to_analyze(build_count, builds, max_fetch_count)
+    build_to_examine = get_builds_to_examine(builds, build_count)
+    expected_failed_builds_count = sum(b['status'] == 'failed' for b in build_to_examine)
+    logging.info(f"Expecting {expected_failed_builds_count} runs to have failure strings.")
 
     failures = {} # test name -> [builds, ...]
 
     failed_build_count = 0
-    for build in tqdm(completed_builds, desc="Build pages examined"):
-        failed_build_count = examine_build(authorization_cookie, build, failures, session, url)
+    for build in tqdm(build_to_examine, desc="Build pages examined"):
+        this_build_failures = examine_build(authorization_cookie, build, session, url)
 
     present_results(build_count, failed_build_count, failures, url)
 
 
-def examine_build(authorization_cookie, build, failures, session, url):
+def merge_failures(*dictionaries):
+    dictionaries = list(dictionaries)
+    d = dictionaries.pop()
+    for other_dict in dictionaries:
+        pass
+
+
+def examine_build(authorization_cookie, build, session, url):
+    this_build_failures = {}
     event_response = get_event_response(authorization_cookie, build, session, url)
     logging.debug("Event Status is {}".format(event_response.status_code))
 
     build_status, event_output = assess_event_response(event_response)
-    failed_build_count = assess_event_output_for_failure(build, event_output, failures)
+    failed_build_count = assess_event_output_for_failure(build, event_output, this_build_failures)
     logging.debug("Results: Job status is {}".format(build_status))
 
-    return failed_build_count
+    return this_build_failures
 
 
 def assess_event_output_for_failure(build, event_output, failures):
@@ -136,7 +149,7 @@ def check_line_for_failure(build, failures, line) -> bool:
     return was_failure
 
 
-def get_builds_to_analyze(build_count, builds, max_fetch_count):
+def get_builds_to_examine(builds, build_count):
     # possible build statuses:
     # {'failed', 'aborted', 'succeeded', 'errored'}
     # Probably also 'pending'
@@ -149,15 +162,15 @@ def get_builds_to_analyze(build_count, builds, max_fetch_count):
 
     if len(completed_builds) < build_count:
         raise RuntimeError(
-            "The build report fetch was limited to the {} most recent builds, with only {} of these completed.  "
+            "The build report returned the {} most recent builds, with only {} of these completed.  "
             "This cannot satisfy the desired target of {} jobs to analyze.".format(
-                max_fetch_count, len(completed_builds), build_count))
+                len(builds), len(completed_builds), build_count))
 
     logging.info(f"Examining {build_count} most recent completed builds: {builds_to_analyze[-1]['name']} - {builds_to_analyze[0]['name']}")
     return builds_to_analyze
 
 
-def get_builds_summary_sheet(authorization_cookie, job, max_fetch_count, pipeline, session, team, url):
+def get_builds_summary_sheet(url, team, pipeline, job, max_fetch_count, session, authorization_cookie):
     builds_url = '{}/api/v1/teams/{}/pipelines/{}/jobs/{}/builds'.format(url, team, pipeline, job)
     build_params = {'limit': max_fetch_count}
     build_response = session.get(builds_url, cookies=authorization_cookie, params=build_params)
@@ -227,4 +240,4 @@ if __name__ == '__main__':
     elif args.verbose:
         logging.getLogger().setLevel(logging.INFO)
 
-    main(args.url, args.pipeline, args.job, args.limit, args.team, args.fetch, args.cookie_token)
+    main(args.url, args.team, args.pipeline, args.job, args.fetch, args.limit, args.cookie_token)
