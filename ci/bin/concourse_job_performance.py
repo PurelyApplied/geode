@@ -46,7 +46,8 @@ def main(url, team, pipeline, job, max_fetch_count, build_count, authorization_c
 
     failed_build_count = 0
     for build in tqdm(build_to_examine, desc="Build pages examined"):
-        this_build_failures = examine_build(authorization_cookie, build, session, url)
+        _, this_failure_count = examine_build(authorization_cookie, build, session, url, failures)
+        failed_build_count += this_failure_count
 
     present_results(build_count, failed_build_count, failures, url)
 
@@ -58,16 +59,17 @@ def merge_failures(*dictionaries):
         pass
 
 
-def examine_build(authorization_cookie, build, session, url):
-    this_build_failures = {}
+def examine_build(authorization_cookie, build, session, url, failures):
+    # this_build_failures = {}
     event_response = get_event_response(authorization_cookie, build, session, url)
     logging.debug("Event Status is {}".format(event_response.status_code))
 
     build_status, event_output = assess_event_response(event_response)
-    failed_build_count = assess_event_output_for_failure(build, event_output, this_build_failures)
+    this_failed_build_count = assess_event_output_for_failure(build, event_output, failures)
     logging.debug("Results: Job status is {}".format(build_status))
 
-    return this_build_failures
+    return failures, this_failed_build_count
+    # return this_build_failures,this_failed_build_count
 
 
 def assess_event_output_for_failure(build, event_output, failures):
@@ -151,14 +153,14 @@ def check_line_for_failure(build, failures, line) -> bool:
 
 def get_builds_to_examine(builds, build_count):
     # possible build statuses:
-    # {'failed', 'aborted', 'succeeded', 'errored'}
+    # {'failed', 'aborted', 'succeeded', 'errored', 'started'}
     # Probably also 'pending'
 
-    succeeded, failed, aborted, errored, pending = sieve(builds, lambda b: b['status'], 'succeeded', 'failed', 'aborted', 'errored', 'pending')
+    succeeded, failed, aborted, errored, pending, started = sieve(builds, lambda b: b['status'], 'succeeded', 'failed', 'aborted', 'errored', 'pending', 'started')
     completed_builds = succeeded + failed
     completed_builds.sort(key=itemgetter('id'), reverse=True)
     builds_to_analyze = completed_builds[:build_count]
-    logging.info(f"Of {len(builds)} runs examined: {len(succeeded)} succeeded, {len(failed)} failed, {len(aborted)} aborted, {len(errored)} errored, {len(pending)} pending")
+    logging.info(f"Of {len(builds)} runs examined: {len(succeeded)} succeeded, {len(failed)} failed, {len(aborted)} aborted, {len(errored)} errored, {len(pending)} pending, {len(started)} started")
 
     if len(completed_builds) < build_count:
         raise RuntimeError(
@@ -182,7 +184,7 @@ def sieve(iterable, inspector, *keys):
     for item in iterable:
         k = inspector(item)
         if k not in s:
-            raise KeyError(f"Unexpected key {k} found by inspector in sieve.")
+            raise KeyError(f"Unexpected key <{k}> found by inspector in sieve.")
         s[inspector(item)].append(item)
     return [s[k] for k in keys]
 
