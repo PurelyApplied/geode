@@ -92,7 +92,6 @@ def assess_event_output_for_failure(build, event_output, failures):
     all_failures = []
     for line in event_output.splitlines():
         """Returns true if no failure is found, false if a failure is found."""
-        # build_fail_matcher = BUILD_FAIL_REGEX.search(line)
         test_failure_matcher = TEST_FAILURE_REGEX.search(line)
         if test_failure_matcher:
             class_name, method_name = test_failure_matcher.groups()
