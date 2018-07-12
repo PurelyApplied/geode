@@ -28,6 +28,14 @@ from colors import color
 from tqdm import tqdm
 
 BUILD_FAIL_REGEX = re.compile('BUILD FAILED|Test Failed!')
+# \s will match newlines
+
+# The below captures to groups ('skipped', 'Task')
+
+# 8203 tests completed, 1 failed, 510 skipped
+#
+# > Task :geode-core:distributedTest FAILED
+
 TEST_FAILURE_REGEX = re.compile('(\S+)\s*>\s*(\S+).*FAILED')
 BUILD_HANG_REGEX = re.compile('timeout exceeded')
 BUILD_HANG_CAPTURE_STACKS = re.compile('Capturing call stacks(.*)timeout exceeded')
@@ -72,7 +80,8 @@ def examine_build(authorization_cookie, build, session, url, failures):
     logging.debug("Event Status is {}".format(event_response.status_code))
 
     build_status, event_output = assess_event_response(event_response)
-    this_failed_build_count = assess_event_output_for_failure(build, event_output, failures)
+    this_build_failures = assess_event_output_for_failure(build, event_output, failures)
+    this_failed_build_count = len(this_build_failures)
     logging.debug("Results: Job status is {}".format(build_status))
 
     return failures, this_failed_build_count
@@ -80,23 +89,22 @@ def examine_build(authorization_cookie, build, session, url, failures):
 
 
 def assess_event_output_for_failure(build, event_output, failures):
-    n_failures = 0
+    all_failures = []
     for line in event_output.splitlines():
         """Returns true if no failure is found, false if a failure is found."""
-        build_fail_matcher = BUILD_FAIL_REGEX.search(line)
-        was_failure = bool(build_fail_matcher)
+        # build_fail_matcher = BUILD_FAIL_REGEX.search(line)
         test_failure_matcher = TEST_FAILURE_REGEX.search(line)
         if test_failure_matcher:
             class_name, method_name = test_failure_matcher.groups()
             this_failure = SingleFailure(class_name, method_name, build)
+            all_failures.append(this_failure)
             test_name = ".".join((this_failure.class_name, this_failure.method))
             if not failures.get(test_name):
                 failures[test_name] = [build]
             else:
                 failures[test_name].append(build)
             logging.debug(f"Failure identified, {this_failure}")
-        n_failures += 1 if was_failure else 0
-    return n_failures
+    return all_failures
 
 
 def assess_event_response(event_response):
