@@ -32,11 +32,13 @@ buildscript {
     classpath "com.pedjak.gradle.plugins:dockerized-test:0.5.6.2-SNAPSHOT"
     classpath 'com.github.ben-manes:gradle-versions-plugin:0.17.0'
     classpath "com.netflix.nebula:nebula-project-plugin:4.0.1"
+    classpath "com.netflix.nebula:gradle-lint-plugin:9.3.4"
   }
 }
 
 apply plugin: 'wrapper'
 apply plugin: 'nebula.facet'
+
 
 wrapper {
   gradleVersion = minimumGradleVersion
@@ -66,6 +68,12 @@ allprojects {
   if (!buildRoot.isEmpty()) {
     buildDir = buildRoot + project.path.replace(":", "/") + "/build"
   }
+
+  apply plugin: 'nebula.lint'
+  gradleLint.rules = ['unused-dependency']
+  gradleLint.alwaysRun = false
+  fixGradleLint.mustRunAfter(':combineReports')
+  lintGradle.mustRunAfter(':combineReports')
 }
 
 task cleanAll(type: Delete) {
