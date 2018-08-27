@@ -22,16 +22,16 @@ dependencies {
     exclude group: 'org.apache.tomcat'
   }
 
-  compile('org.apache.tomcat:tomcat-catalina:' + project.'tomcat8.version')
+  compile('org.apache.tomcat:tomcat-catalina')
       {
         exclude module: 'tomcat-annotations-api'
         exclude module: 'tomcat-servlet-api'
       }
-  compile('org.apache.tomcat:tomcat-coyote:' + project.'tomcat8.version')
+  compile('org.apache.tomcat:tomcat-coyote')
       {
         exclude module: 'tomcat-servlet-api'
       }
-  compile('org.apache.tomcat:tomcat-juli:' + project.'tomcat8.version')
+  compile('org.apache.tomcat:tomcat-juli')
   compile 'javax.servlet:javax.servlet-api:' + '3.1.0'
 
   distributedTestCompile project(":extensions:geode-modules-test")

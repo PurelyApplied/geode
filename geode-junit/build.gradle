@@ -18,24 +18,24 @@
 dependencies {
   compileOnly project(':geode-core')
 
-  compile('com.github.stefanbirkner:system-rules:' + project.'system-rules.version')
+  compile('com.github.stefanbirkner:system-rules')
       {
         exclude module: 'junit-dep'
       }
-  compile('com.jayway.jsonpath:json-path:' + project.'json-path.version')
-  compile('org.assertj:assertj-core:' + project.'assertj-core.version')
-  compile('commons-io:commons-io:' + project.'commons-io.version')
-  compile('commons-lang:commons-lang:' + project.'commons-lang.version')
-  compile('com.google.guava:guava:' + project.'guava.version')
-  compile('org.mockito:mockito-core:' + project.'mockito-core.version')
-  compile('org.awaitility:awaitility:' + project.'awaitility.version')
-  compile('org.apache.logging.log4j:log4j-api:' + project.'log4j.version')
-  compile('org.apache.logging.log4j:log4j-core:' + project.'log4j.version')
-  compile('junit:junit:' + project.'junit.version')
+  compile('com.jayway.jsonpath:json-path')
+  compile('org.assertj:assertj-core')
+  compile('commons-io:commons-io')
+  compile('commons-lang:commons-lang')
+  compile('com.google.guava:guava')
+  compile('org.mockito:mockito-core')
+  compile('org.awaitility:awaitility')
+  compile('org.apache.logging.log4j:log4j-api')
+  compile('org.apache.logging.log4j:log4j-core')
+  compile('junit:junit')
       {
         exclude module: 'hamcrest-core'
       }
-  compile('org.hamcrest:hamcrest-all:' + project.'hamcrest-all.version')
+  compile('org.hamcrest:hamcrest-all')
 
   runtime project(":geode-old-versions")
 }

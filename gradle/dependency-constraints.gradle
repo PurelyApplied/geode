@@ -227,7 +227,7 @@ dependencies{
     integrationTestRuntime('org.springframework:spring-webmvc:' + springframework_version)
     integrationTestRuntime('xerces:xercesImpl:' + xercesImpl_version)
 //    jcaAnnotationProcessor('org.apache.logging.log4j:log4j-core:' + log4j_version)
-    providedCompile('commons-logging:commons-logging:' + commons_logging_version)
+//    providedCompile('commons-logging:commons-logging:' + commons_logging_version)
     runtime('commons-fileupload:commons-fileupload:' + commons_fileupload_version)
     runtime('org.apache.logging.log4j:log4j-jcl:' + log4j_version)
     runtime('org.apache.logging.log4j:log4j-jul:' + log4j_version)

@@ -19,7 +19,7 @@ dependencies {
   compileOnly project(':geode-common')
   compileOnly project(':geode-core')
 
-  compile('org.springframework:spring-context:' + project.'springframework.version')
+  compile('org.springframework:spring-context')
       {
         exclude module: 'spring-beans'
         exclude module: 'spring-expression'
@@ -28,7 +28,7 @@ dependencies {
 
   testCompile project(':geode-core')
 
-  integrationTestCompile('org.awaitility:awaitility:' + project.'awaitility.version')
+  integrationTestCompile('org.awaitility:awaitility')
   // Only needed for category Flaky by Gradle
   integrationTestRuntime project(':geode-junit')
 }

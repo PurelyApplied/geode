@@ -21,8 +21,8 @@ dependencies {
   compileOnly project(':geode-core')
 
   compile project(':geode-common')
-  compile('junit:junit:' + project.'junit.version')
-  compile('org.mockito:mockito-core:' + project.'mockito-core.version')
+  compile('junit:junit')
+  compile('org.mockito:mockito-core')
 
 }
 

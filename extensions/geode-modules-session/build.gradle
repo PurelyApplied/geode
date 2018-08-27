@@ -22,15 +22,15 @@ dependencies {
   compile project(':geode-core')
 
   integrationTestCompile project(":geode-dunit")
-  integrationTestCompile('org.httpunit:httpunit:' + project.'httpunit.version')
+  integrationTestCompile('org.httpunit:httpunit')
       {
         exclude group: 'javax.servlet'
       }
   integrationTestCompile(group: 'org.eclipse.jetty', name: 'jetty-http', version: project.'jetty.version', classifier: 'tests')
   integrationTestCompile(group: 'org.eclipse.jetty', name: 'jetty-servlet', version: project.'jetty.version', classifier: 'tests')
-  integrationTestCompile('javax.servlet:javax.servlet-api:' + project.'javax.servlet-api.version')
-  integrationTestCompile('org.slf4j:slf4j-api:' + project.'slf4j-api.version')
-  integrationTestCompile('com.mockrunner:mockrunner-servlet:' + project.'mockrunner.version')
+  integrationTestCompile('javax.servlet:javax.servlet-api')
+  integrationTestCompile('org.slf4j:slf4j-api')
+  integrationTestCompile('com.mockrunner:mockrunner-servlet')
       {
         exclude group: 'jboss'
         exclude group: 'xerces'
