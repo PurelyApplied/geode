@@ -5,7 +5,7 @@
 // (the "License"); you may not use this file except in compliance with
 // the License.  You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE_2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,7 +38,7 @@ def derby_version = '10.14.2.0'
 def dom4j_version = '1.6.1'
 def fastutil_version = '8.2.1'
 def google_gson_version = '2.8.5'
-def guava_version = '25.1_jre'
+def guava_version = '25.1-jre'
 def hamcrest_all_version = '1.3'
 def httpclient_version = '4.5.6'
 def httpcore_version = '4.4.10'
@@ -46,7 +46,7 @@ def httpunit_version = '1.7.2'
 def jackson_version = '2.9.6'
 def jackson_module_scala_2_10_version = '2.9.6'
 def jansi_version = '1.17.1'
-def javassist_version = '3.21.0_GA'
+def javassist_version = '3.21.0-GA'
 def javax_ejb_api_version = '3.0'
 def javax_jsr250_api_version = '1.0'
 def javax_mail_api_version = '1.6.1'
@@ -78,7 +78,7 @@ def mx4j_remote_version = '3.0.2'
 def mx4j_tools_version = '3.0.1'
 def netty_all_version = '4.1.27.Final'
 def open_json_version = '1.8'
-def powermock_version = '2.0.0_beta.5'
+def powermock_version = '2.0.0-beta.5'
 def protobuf_gradle_plugin_version = '0.8.6'
 def protobuf_java_version = '3.6.0'
 def protoc_version = '3.6.0'
@@ -98,7 +98,7 @@ def springfox_version = '2.9.2'
 def stephenc_findbugs_version = '1.3.9_1'
 def system_rules_version = '1.18.0'
 def tempus_fugit_version = '1.1'
-// Multiple versions of tomcat are hard_coded in geode_assembly:test
+// Multiple versions of tomcat are hard-coded in geode-assembly:test
 // at o.a.g.session.tests.TomcatInstall
 def tomcat6_version = '6.0.37'
 def tomcat7_version = '7.0.73'
