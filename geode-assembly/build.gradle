@@ -34,13 +34,15 @@ configurations.all {
   artifacts.each {
     logger.info("Pruning configName = " + configName + " name=" + it.name + " extension=" + it.extension + " classifier=" + it.classifier)
   }
-  artifacts.removeAll{ it.name == jar.baseName && it.extension == 'jar' && it.classifier == jar.classifier }
+  artifacts.removeAll {
+    it.name == jar.baseName && it.extension == 'jar' && it.classifier == jar.classifier
+  }
   if (artifacts) {
     logger.info("Artifacts are now: " + artifacts)
   }
 }
 
-gradle.taskGraph.whenReady( { graph ->
+gradle.taskGraph.whenReady({ graph ->
   tasks.withType(Tar).each { tar ->
     tar.compression = Compression.GZIP
     tar.extension = 'tgz'
@@ -97,7 +99,7 @@ dependencies {
   distributedTestCompile project(':geode-assembly:geode-assembly-test')
   distributedTestCompile 'org.apache.httpcomponents:httpclient:' + project.'httpclient.version'
 
-  distributedTestRuntime (project(':extensions:geode-modules-session-internal')) {
+  distributedTestRuntime(project(':extensions:geode-modules-session-internal')) {
     exclude group: 'org.apache.tomcat'
   }
   distributedTestRuntime group: 'org.codehaus.cargo', name: 'cargo-core-uberjar', version: '1.6.3'
@@ -129,13 +131,14 @@ dependencies {
   upgradeTestRuntime project(':extensions:session-testing-war')
 
 
-  gfshDependencies ('org.springframework:spring-web:' + project.'springframework.version'){
-    exclude module: 'spring-core'
-    exclude module: 'commons-logging'
-  }
+  gfshDependencies('org.springframework:spring-web:' + project.'springframework.version')
+      {
+        exclude module: 'spring-core'
+        exclude module: 'commons-logging'
+      }
 }
 
-tasks.withType(Test){
+tasks.withType(Test) {
   dependsOn installDist
   environment 'GEODE_HOME', "$buildDir/install/${distributions.main.baseName}"
 }
@@ -167,69 +170,70 @@ task defaultCacheConfig(type: JavaExec, dependsOn: classes) {
 def cp = {
   // first add all the dependent project jars
   def jars = configurations.archives.dependencies.collect { it.dependencyProject }
-    .findAll { !(it.name.contains('web') || it.name.contains('pulse')) }
-    .collect { it.jar.archiveName }
-    .join(' ')
+      .findAll { !(it.name.contains('web') || it.name.contains('pulse')) }
+      .collect { it.jar.archiveName }
+      .join(' ')
 
   // then add all the dependencies of the dependent jars
   jars += ' ' + configurations.archives.dependencies.collect {
     it.dependencyProject.findAll { !(it.name.contains('web-api') || it.name.contains('pulse')) }
-      .collect { it.configurations.runtime.collect { it.getName() }.findAll {
+        .collect {
+      it.configurations.runtime.collect { it.getName() }.findAll {
         // depedencies from geode-core
         it.contains('antlr') ||
-        it.contains('commons-io') ||
-        it.contains('classgraph') ||
-        it.contains('commons-collections') ||
-        it.contains('commons-lang') ||
-        it.contains('commons-logging') ||
-        it.contains('commons-validator') ||
-        it.contains('commons-beanutils') ||
-        it.contains('commons-codec') ||
-        it.contains('fastutil') ||
-        it.contains('jackson-annotations') ||
-        it.contains('jackson-core') ||
-        it.contains('jackson-databind') ||
-        it.contains('jansi') ||
-        it.contains('javax.resource-api') ||
-        it.contains('javax.servlet-api') ||
-        it.contains('javax.transaction-api') ||
-        it.contains('jetty-http') ||
-        it.contains('jetty-io') ||
-        it.contains('jetty-security') ||
-        it.contains('jetty-server') ||
-        it.contains('jetty-servlet') ||
-        it.contains('jetty-webapp') ||
-        it.contains('jetty-util') ||
-        it.contains('jetty-xml') ||
-        it.contains('jline') ||
-        it.contains('jna') ||
-        it.contains('jopt-simple') ||
-        it.contains('log4j-api') ||
-        it.contains('log4j-core') ||
-        it.contains('log4j-jcl') ||
-        it.contains('log4j-jul') ||
-        it.contains('log4j-slf4j-impl') ||
-        it.contains('rmiio') ||
-        it.contains('shiro') ||
-        it.contains('slf4j-api') ||
-        it.contains('spring-core') ||
-        it.contains('spring-shell') ||
-        it.contains('snappy') ||
-        it.contains('jgroups') ||
-        it.contains('netty') ||
+            it.contains('commons-io') ||
+            it.contains('classgraph') ||
+            it.contains('commons-collections') ||
+            it.contains('commons-lang') ||
+            it.contains('commons-logging') ||
+            it.contains('commons-validator') ||
+            it.contains('commons-beanutils') ||
+            it.contains('commons-codec') ||
+            it.contains('fastutil') ||
+            it.contains('jackson-annotations') ||
+            it.contains('jackson-core') ||
+            it.contains('jackson-databind') ||
+            it.contains('jansi') ||
+            it.contains('javax.resource-api') ||
+            it.contains('javax.servlet-api') ||
+            it.contains('javax.transaction-api') ||
+            it.contains('jetty-http') ||
+            it.contains('jetty-io') ||
+            it.contains('jetty-security') ||
+            it.contains('jetty-server') ||
+            it.contains('jetty-servlet') ||
+            it.contains('jetty-webapp') ||
+            it.contains('jetty-util') ||
+            it.contains('jetty-xml') ||
+            it.contains('jline') ||
+            it.contains('jna') ||
+            it.contains('jopt-simple') ||
+            it.contains('log4j-api') ||
+            it.contains('log4j-core') ||
+            it.contains('log4j-jcl') ||
+            it.contains('log4j-jul') ||
+            it.contains('log4j-slf4j-impl') ||
+            it.contains('rmiio') ||
+            it.contains('shiro') ||
+            it.contains('slf4j-api') ||
+            it.contains('spring-core') ||
+            it.contains('spring-shell') ||
+            it.contains('snappy') ||
+            it.contains('jgroups') ||
+            it.contains('netty') ||
 
-        // dependencies from geode-lucene
-        it.contains('lucene-analyzers-common') ||
-        it.contains('lucene-core') ||
-        it.contains('lucene-queries') ||
-        it.contains('lucene-queryparser') ||
-        it.contains('lucene-analyzers-phonetic') ||
+            // dependencies from geode-lucene
+            it.contains('lucene-analyzers-common') ||
+            it.contains('lucene-core') ||
+            it.contains('lucene-queries') ||
+            it.contains('lucene-queryparser') ||
+            it.contains('lucene-analyzers-phonetic') ||
 
-        // dependencies from geode-protobuf
-        it.contains('protobuf-java') ||
+            // dependencies from geode-protobuf
+            it.contains('protobuf-java') ||
 
-        // dependencies from geode-connectors
-        it.contains('HikariCP')
+            // dependencies from geode-connectors
+            it.contains('HikariCP')
       }
     }
   }.flatten().unique().join(' ')
@@ -239,7 +243,7 @@ def cp = {
 
 // Note: this dependency doesn't work if you change a library version from
 // a dependent project.  Please fix me.
-task depsJar (type: Jar, dependsOn: ':geode-core:classes') {
+task depsJar(type: Jar, dependsOn: ':geode-core:classes') {
   description 'Assembles the jar archive that defines the gemfire classpath.'
   archiveName 'geode-dependencies.jar'
   doFirst {
@@ -251,14 +255,14 @@ task depsJar (type: Jar, dependsOn: ':geode-core:classes') {
 
 // Note: this dependency doesn't work if you change a library version from
 // a dependent project.  Please fix me.
-task gfshDepsJar (type: Jar, dependsOn: ':geode-core:classes') {
+task gfshDepsJar(type: Jar, dependsOn: ':geode-core:classes') {
   description 'Assembles the jar archive that defines the gfsh classpath.'
   archiveName 'gfsh-dependencies.jar'
   doFirst {
     manifest {
       attributes("Class-Path": cp() +
-        ' ' + project(':geode-core').webJar.archiveName +
-        ' ' + configurations.gfshDependencies.collect{ it.getName() }.flatten().join(' ')
+          ' ' + project(':geode-core').webJar.archiveName +
+          ' ' + configurations.gfshDependencies.collect { it.getName() }.flatten().join(' ')
       )
     }
   }
@@ -267,33 +271,33 @@ task gfshDepsJar (type: Jar, dependsOn: ':geode-core:classes') {
 
 def docsDir = file("$buildDir/javadocs")
 task docs(type: Javadoc) {
-    options.addStringOption('Xdoclint:none', '-quiet')
-    options.links("https://lucene.apache.org/core/6_4_1/core/")
-    options.links("https://lucene.apache.org/core/6_4_1/queryparser/")
-    options.encoding='UTF-8'
-    source parent.subprojects*.javadoc*.source
-    classpath = files(parent.subprojects*.javadoc*.classpath)
-    title = "${productName} ${project.version}"
-    include 'org/apache/geode/**/'
-    exclude 'org/apache/geode/internal/**/'
-    exclude 'org/apache/geode/**/internal/**/'
-    exclude 'org/apache/geode/**/xml/**/'
-    exclude 'org/apache/geode/distributed/**/util/**/'
-    exclude 'org/apache/geode/test/**/'
-    destinationDir = docsDir
+  options.addStringOption('Xdoclint:none', '-quiet')
+  options.links("https://lucene.apache.org/core/6_4_1/core/")
+  options.links("https://lucene.apache.org/core/6_4_1/queryparser/")
+  options.encoding = 'UTF-8'
+  source parent.subprojects*.javadoc*.source
+  classpath = files(parent.subprojects*.javadoc*.classpath)
+  title = "${productName} ${project.version}"
+  include 'org/apache/geode/**/'
+  exclude 'org/apache/geode/internal/**/'
+  exclude 'org/apache/geode/**/internal/**/'
+  exclude 'org/apache/geode/**/xml/**/'
+  exclude 'org/apache/geode/distributed/**/util/**/'
+  exclude 'org/apache/geode/test/**/'
+  destinationDir = docsDir
 
+  parent.subprojects.each { project ->
+    dependsOn(project.tasks['javadoc'])
+  }
+  doLast {
     parent.subprojects.each { project ->
-      dependsOn(project.tasks['javadoc'])
-    }
-    doLast {
-      parent.subprojects.each { project ->
-        copy {
-          from project.sourceSets.main.resources.srcDirs
-          into docsDir
-          include 'javadoc-images/*'
-        }
+      copy {
+        from project.sourceSets.main.resources.srcDirs
+        into docsDir
+        include 'javadoc-images/*'
       }
-   }
+    }
+  }
 }
 
 task writeBuildInfo {
@@ -307,12 +311,12 @@ task writeBuildInfo {
   }
 }
 
-gradle.taskGraph.whenReady( { graph ->
+gradle.taskGraph.whenReady({ graph ->
   tasks.withType(AbstractArchiveTask).findAll {
     it.name.toLowerCase().contains("dist")
   }.each { archive ->
     archive.doLast {
-      ant.checksum file:"${archive.archivePath}", algorithm:"sha-256", format: 'MD5SUM', fileext: '.sha256'
+      ant.checksum file: "${archive.archivePath}", algorithm: "sha-256", format: 'MD5SUM', fileext: '.sha256'
     }
   }
 })
@@ -322,7 +326,7 @@ distributions {
     baseName = 'apache-geode'
     contents {
       from writeBuildInfo
-      from (rootDir) {
+      from(rootDir) {
         exclude 'KEYS'
         exclude '**/gradlew'
         exclude '**/gradlew.bat'
@@ -361,17 +365,17 @@ distributions {
       exclude '*-sources.jar'
       exclude '*-javadoc.jar'
 
-      from rootProject.file( 'README.md' )
+      from rootProject.file('README.md')
 
-      into ('config') {
+      into('config') {
         from defaultCacheConfig
         from defaultDistributionConfig
-        from (project(':geode-core').sourceSets.main.resources.files.find {
+        from(project(':geode-core').sourceSets.main.resources.files.find {
           it.name == 'log4j2.xml'
         })
       }
 
-      into ('lib') {
+      into('lib') {
         from project(":geode-common").configurations.runtime
         from project(":geode-common").configurations.archives.allArtifacts.files
 
@@ -419,32 +423,32 @@ distributions {
         from gfshDepsJar
       }
 
-      into ('tools/Extensions') {
-        from (project(":geode-web").configurations.archives.allArtifacts.files) {
+      into('tools/Extensions') {
+        from(project(":geode-web").configurations.archives.allArtifacts.files) {
           exclude '*.jar'
         }
-        from (project(":geode-web-api").configurations.archives.allArtifacts.files) {
+        from(project(":geode-web-api").configurations.archives.allArtifacts.files) {
           exclude '*.jar'
         }
       }
 
       into('tools/ClientProtocol') {
-        from {project(":geode-protobuf-messages").zip.outputs.files}
+        from { project(":geode-protobuf-messages").zip.outputs.files }
       }
 
-      into ('javadoc') {
+      into('javadoc') {
         from docs
       }
 
-      into ('tools/Pulse') {
-        from (project(":geode-pulse").configurations.archives.allArtifacts.files)
+      into('tools/Pulse') {
+        from(project(":geode-pulse").configurations.archives.allArtifacts.files)
       }
 
-      into ('tools/Modules') {
-        from {project(':extensions:geode-modules-assembly').distTcServer}
-        from {project(':extensions:geode-modules-assembly').distTcServer30}
-        from {project(':extensions:geode-modules-assembly').distTomcat}
-        from {project(':extensions:geode-modules-assembly').distAppServer}
+      into('tools/Modules') {
+        from { project(':extensions:geode-modules-assembly').distTcServer }
+        from { project(':extensions:geode-modules-assembly').distTcServer30 }
+        from { project(':extensions:geode-modules-assembly').distTomcat }
+        from { project(':extensions:geode-modules-assembly').distAppServer }
       }
     }
   }
@@ -454,7 +458,7 @@ distributions {
 def dependOnInstalledProduct = {
   dependsOn installDist
   def install = file("$buildDir/install/${distributions.main.baseName}")
-  environment ('GEODE_HOME', install)
+  environment('GEODE_HOME', install)
 }
 
 // Add the configuration closure to the test targets so they depend on the install directory
@@ -478,8 +482,8 @@ upgradeTest.dependsOn ':geode-old-versions:build'
 
 /**Print the names of all jar files in a fileTree */
 def printJars(tree) {
-  tree.matching {include("**/*.jar")}.visit{ file ->
-    if(!file.isDirectory()) {
+  tree.matching { include("**/*.jar") }.visit { file ->
+    if (!file.isDirectory()) {
       println file.name
     }
   }
@@ -495,13 +499,13 @@ task dumpInstalledJars(dependsOn: installDist) {
     println("==========================")
     printJars(installDir)
 
-    installDir.include("**/*.war").visit{ file ->
-      if(!file.isDirectory()) {
-          FileTree warContents = zipTree(file.file)
-          println ""
-          println file.name
-          println("==========================")
-          printJars(warContents);
+    installDir.include("**/*.war").visit { file ->
+      if (!file.isDirectory()) {
+        FileTree warContents = zipTree(file.file)
+        println ""
+        println file.name
+        println("==========================")
+        printJars(warContents);
       }
     }
   }

@@ -36,28 +36,32 @@ dependencies {
   // added only to ensure common version with other geode modules
   runtime 'org.slf4j:slf4j-api:' + project.'slf4j-api.version'
 
-  compile ('org.springframework.security:spring-security-config:' + project.'spring-security.version') {
-    exclude module: 'aopalliance'
-    exclude module: 'spring-expression'
-  }
-  compile ('org.springframework.security:spring-security-ldap:' + project.'spring-security.version') {
-    exclude module: 'aopalliance'
-    exclude module: 'spring-asm'
-    exclude module: 'spring-expression'
-    exclude module: 'spring-jdbc'
-  }
-  compile ('org.springframework.security:spring-security-web:' + project.'spring-security.version') {
-    exclude module: 'aopalliance'
-    exclude module: 'spring-asm'
-    exclude module: 'spring-expression'
-    exclude module: 'spring-jdbc'
-  }
-  compile ('org.springframework:spring-context:' + project.'springframework.version');
-  compile ('org.springframework:spring-web:' + project.'springframework.version');
-  runtime ('org.springframework:spring-webmvc:' + project.'springframework.version') {
-    exclude module: 'aopalliance'
-    exclude module: 'aspectjweaver'
-  }
+  compile('org.springframework.security:spring-security-config:' + project.'spring-security.version')
+      {
+        exclude module: 'aopalliance'
+        exclude module: 'spring-expression'
+      }
+  compile('org.springframework.security:spring-security-ldap:' + project.'spring-security.version')
+      {
+        exclude module: 'aopalliance'
+        exclude module: 'spring-asm'
+        exclude module: 'spring-expression'
+        exclude module: 'spring-jdbc'
+      }
+  compile('org.springframework.security:spring-security-web:' + project.'spring-security.version')
+      {
+        exclude module: 'aopalliance'
+        exclude module: 'spring-asm'
+        exclude module: 'spring-expression'
+        exclude module: 'spring-jdbc'
+      }
+  compile('org.springframework:spring-context:' + project.'springframework.version');
+  compile('org.springframework:spring-web:' + project.'springframework.version');
+  runtime('org.springframework:spring-webmvc:' + project.'springframework.version')
+      {
+        exclude module: 'aopalliance'
+        exclude module: 'aspectjweaver'
+      }
   compile 'org.springframework:spring-tx:' + project.'spring-tx.version'
   compile 'com.fasterxml.jackson.core:jackson-annotations:' + project.'jackson.version'
   compile 'com.fasterxml.jackson.core:jackson-core:' + project.'jackson.version'
@@ -108,12 +112,12 @@ task copyGemFireVersionFile(type: Copy) {
 
 eclipse.classpath.file {
   whenMerged { classpath ->
-    classpath.entries.removeAll { entry -> entry.path.contains('geode-core/build')}
+    classpath.entries.removeAll { entry -> entry.path.contains('geode-core/build') }
   }
 }
 idea.module.iml {
-  whenMerged {module ->
-    module.dependencies.removeAll { entry -> entry.toString().contains('geode-core/build')}
+  whenMerged { module ->
+    module.dependencies.removeAll { entry -> entry.toString().contains('geode-core/build') }
   }
 }
 

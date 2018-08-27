@@ -19,9 +19,10 @@ dependencies {
   compile project(':geode-core')
   compile project(':geode-common')
   compile 'org.apache.lucene:lucene-analyzers-common:' + project.'lucene.version'
-  compile ('org.apache.lucene:lucene-queryparser:' + project.'lucene.version') {
-    exclude module: 'lucene-sandbox'
-  }
+  compile('org.apache.lucene:lucene-queryparser:' + project.'lucene.version')
+      {
+        exclude module: 'lucene-sandbox'
+      }
 
   runtime 'org.apache.lucene:lucene-analyzers-phonetic:' + project.'lucene.version'
 
@@ -41,7 +42,7 @@ dependencies {
   distributedTestCompile 'pl.pragmatists:JUnitParams:' + project.'JUnitParams.version'
 
 
-  upgradeTestCompile (project(":geode-dunit")) {
+  upgradeTestCompile(project(":geode-dunit")) {
     exclude module: 'geode-core'
   }
 

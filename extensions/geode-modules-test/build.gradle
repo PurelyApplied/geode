@@ -16,11 +16,12 @@
  */
 
 dependencies {
-  compileOnly ('org.apache.tomcat:catalina-ha:' + project.'tomcat6.version') {
-    exclude module: 'annotations-api'
-    exclude module: 'coyote'
-    exclude module: 'tribes'
-  }
+  compileOnly('org.apache.tomcat:catalina-ha:' + project.'tomcat6.version')
+      {
+        exclude module: 'annotations-api'
+        exclude module: 'coyote'
+        exclude module: 'tribes'
+      }
 
   compile(project(':extensions:geode-modules')) {
     // Remove everything related to Tomcat 6.x

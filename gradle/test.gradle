@@ -36,9 +36,10 @@ gradle.taskGraph.whenReady({ graph ->
 
 subprojects {
   dependencies {
-    testCompile('com.github.stefanbirkner:system-rules:' + project.'system-rules.version') {
-      exclude module: 'junit-dep'
-    }
+    testCompile('com.github.stefanbirkner:system-rules:' + project.'system-rules.version')
+        {
+          exclude module: 'junit-dep'
+        }
     testCompile 'com.google.code.tempus-fugit:tempus-fugit:' + project.'tempus-fugit.version'
     testCompile 'org.awaitility:awaitility:' + project.'awaitility.version'
     testCompile 'edu.umd.cs.mtc:multithreadedtc:' + project.'multithreadedtc.version'
@@ -57,9 +58,10 @@ subprojects {
 
     testCompile 'pl.pragmatists:JUnitParams:' + project.'JUnitParams.version'
 
-    testRuntime('cglib:cglib:' + project.'cglib.version') {
-      exclude module: 'org.apache.ant'
-    }
+    testRuntime('cglib:cglib:' + project.'cglib.version')
+        {
+          exclude module: 'org.apache.ant'
+        }
   }
 
   // This configuration might be safely removed once the CategoryWithParameterizedRunnerFactory
@@ -70,9 +72,10 @@ subprojects {
 
   dependencies {
     apt files("${rootProject.projectDir}/buildSrc/build/libs/buildSrc.jar")
-    apt(group: 'junit', name: 'junit', version: project.'junit.version') {
-      transitive = false
-    }
+    apt(group: 'junit', name: 'junit', version: project.'junit.version')
+        {
+          transitive = false
+        }
     // Because EnsureCorrectRunsWithProcessor needs access to
     // CategoryWithParameterizedRunnerFactory.
     // buildSrc uses version 1.3.0, so we use it here instead of the local geode-junit project

@@ -56,79 +56,95 @@ dependencies {
   compile 'commons-digester:commons-digester:' + project.'commons-digester.version'
 
   compile 'commons-lang:commons-lang:' + project.'commons-lang.version'
-  compile('commons-modeler:commons-modeler:' + project.'commons-modeler.version') {
-    exclude module: 'commons-digester'
-    exclude module: 'commons-logging-api'
-    exclude module: 'mx4j-jmx'
-    exclude module: 'xml-apis'
-    ext.optional = true
-  }
-  compile('io.netty:netty-all:' + project.'netty-all.version') {
-    ext.optional = true
-  }
+  compile('commons-modeler:commons-modeler:' + project.'commons-modeler.version')
+      {
+        exclude module: 'commons-digester'
+        exclude module: 'commons-logging-api'
+        exclude module: 'mx4j-jmx'
+        exclude module: 'xml-apis'
+        ext.optional = true
+      }
+  compile('io.netty:netty-all:' + project.'netty-all.version')
+      {
+        ext.optional = true
+      }
   compile 'it.unimi.dsi:fastutil:' + project.'fastutil.version'
-  compile('javax.mail:javax.mail-api:' + project.'javax.mail-api.version') {
-    ext.optional = true;
-  }
+  compile('javax.mail:javax.mail-api:' + project.'javax.mail-api.version')
+      {
+        ext.optional = true;
+      }
   compile 'javax.resource:javax.resource-api:' + project.'javax.resource-api.version'
-  compile('mx4j:mx4j:' + project.'mx4j.version') {
-    ext.optional = true;
-  }
-  compile('mx4j:mx4j-remote:' + project.'mx4j-remote.version') {
-    ext.optional = true;
-  }
-  compile('mx4j:mx4j-tools:' + project.'mx4j-tools.version') {
-    ext.optional = true;
-  }
+  compile('mx4j:mx4j:' + project.'mx4j.version')
+      {
+        ext.optional = true;
+      }
+  compile('mx4j:mx4j-remote:' + project.'mx4j-remote.version')
+      {
+        ext.optional = true;
+      }
+  compile('mx4j:mx4j-tools:' + project.'mx4j-tools.version')
+      {
+        ext.optional = true;
+      }
   compile('net.java.dev.jna:jna:' + project.'jna.version')
 
   compile('net.sf.jopt-simple:jopt-simple:' + project.'jopt-simple.version')
 
   compile 'org.apache.logging.log4j:log4j-api:' + project.'log4j.version'
   compile 'org.apache.logging.log4j:log4j-core:' + project.'log4j.version'
-  runtime('org.fusesource.jansi:jansi:' + project.'jansi.version') {
-    ext.optional = true
-  }
+  runtime('org.fusesource.jansi:jansi:' + project.'jansi.version')
+      {
+        ext.optional = true
+      }
   runtime 'org.slf4j:slf4j-api:' + project.'slf4j-api.version'
 
-  runtime('org.apache.logging.log4j:log4j-slf4j-impl:' + project.'log4j.version') {
-    exclude module: 'slf4j-api'
-    ext.optional = true
-  }
-  runtime('org.apache.logging.log4j:log4j-jcl:' + project.'log4j.version') {
-    ext.optional = true
-  }
-  runtime('org.apache.logging.log4j:log4j-jul:' + project.'log4j.version') {
-    ext.optional = true
-  }
-  compile('org.eclipse.jetty:jetty-webapp:' + project.'jetty.version') {
-    ext.optional = true
-  }
-  compileOnly('org.springframework:spring-webmvc:' + project.'springframework.version') {
-    exclude module: 'aopalliance'
-    exclude module: 'spring-aop'
-    ext.optional = true
-  }
-  testCompile('org.springframework:spring-webmvc:' + project.'springframework.version') {
-    exclude module: 'aopalliance'
-    exclude module: 'spring-aop'
-    ext.optional = true
-  }
-  compile('org.springframework:spring-core:' + project.'springframework.version') {
-    ext.optional = true
-  }
-  compile('org.springframework.shell:spring-shell:' + project.'spring-shell.version') {
-    exclude module: 'aopalliance'
-    exclude module: 'asm'
-    exclude module: 'cglib'
-    exclude module: 'guava'
-    exclude module: 'spring-aop'
-    exclude module: 'spring-context-support'
-    ext.optional = true
-  }
-  compile('org.iq80.snappy:snappy:' + project.'snappy-java.version') {
-    ext.optional = true
-  }
+  runtime('org.apache.logging.log4j:log4j-slf4j-impl:' + project.'log4j.version')
+      {
+        exclude module: 'slf4j-api'
+        ext.optional = true
+      }
+  runtime('org.apache.logging.log4j:log4j-jcl:' + project.'log4j.version')
+      {
+        ext.optional = true
+      }
+  runtime('org.apache.logging.log4j:log4j-jul:' + project.'log4j.version')
+      {
+        ext.optional = true
+      }
+  compile('org.eclipse.jetty:jetty-webapp:' + project.'jetty.version')
+      {
+        ext.optional = true
+      }
+  compileOnly('org.springframework:spring-webmvc:' + project.'springframework.version')
+      {
+        exclude module: 'aopalliance'
+        exclude module: 'spring-aop'
+        ext.optional = true
+      }
+  testCompile('org.springframework:spring-webmvc:' + project.'springframework.version')
+      {
+        exclude module: 'aopalliance'
+        exclude module: 'spring-aop'
+        ext.optional = true
+      }
+  compile('org.springframework:spring-core:' + project.'springframework.version')
+      {
+        ext.optional = true
+      }
+  compile('org.springframework.shell:spring-shell:' + project.'spring-shell.version')
+      {
+        exclude module: 'aopalliance'
+        exclude module: 'asm'
+        exclude module: 'cglib'
+        exclude module: 'guava'
+        exclude module: 'spring-aop'
+        exclude module: 'spring-context-support'
+        ext.optional = true
+      }
+  compile('org.iq80.snappy:snappy:' + project.'snappy-java.version')
+      {
+        ext.optional = true
+      }
 
   compile 'org.apache.shiro:shiro-core:' + project.'shiro.version'
 
@@ -237,7 +253,8 @@ task createVersionPropertiesFile {
         "Product-Version"   : version,
         "Build-Id"          : "${System.env.USER} ${buildId}".toString(),
         "Build-Date"        : new Date().format('yyyy-MM-dd HH:mm:ss Z'),
-        "Build-Platform"    : "${System.properties['os.name']} ${System.properties['os.version']} ${System.properties['os.arch']}".toString(),
+        "Build-Platform"    : "${System.properties['os.name']} ${System.properties['os.version']} $
+            { System.properties['os.arch'] } ".toString(),
         "Build-Java-Version": System.properties['java.version'],
         'Source-Repository' : sourceRepository,
         'Source-Revision'   : sourceRevision,
