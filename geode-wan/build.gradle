@@ -23,7 +23,7 @@ dependencies {
 
   integrationTestCompile project(":geode-junit")
 
-  distributedTestCompile 'pl.pragmatists:JUnitParams:' + project.'JUnitParams.version'
+  distributedTestCompile('pl.pragmatists:JUnitParams:' + project.'JUnitParams.version')
 
   upgradeTestCompile (project(":geode-dunit")) {
     exclude module: 'geode-core'

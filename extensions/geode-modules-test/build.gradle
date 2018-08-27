@@ -28,7 +28,7 @@ dependencies {
     exclude group: 'org.apache.tomcat'
   }
   compile project(':geode-junit')
-  compile 'org.httpunit:httpunit:' + project.'httpunit.version'
+  compile('org.httpunit:httpunit:' + project.'httpunit.version')
 }
 
 disableMavenPublishing()

@@ -28,8 +28,8 @@ dependencies {
       }
   integrationTestCompile(group: 'org.eclipse.jetty', name: 'jetty-http', version: project.'jetty.version', classifier: 'tests')
   integrationTestCompile(group: 'org.eclipse.jetty', name: 'jetty-servlet', version: project.'jetty.version', classifier: 'tests')
-  integrationTestCompile 'javax.servlet:javax.servlet-api:' + project.'javax.servlet-api.version'
-  integrationTestCompile 'org.slf4j:slf4j-api:' + project.'slf4j-api.version'
+  integrationTestCompile('javax.servlet:javax.servlet-api:' + project.'javax.servlet-api.version')
+  integrationTestCompile('org.slf4j:slf4j-api:' + project.'slf4j-api.version')
   integrationTestCompile('com.mockrunner:mockrunner-servlet:' + project.'mockrunner.version')
       {
         exclude group: 'jboss'

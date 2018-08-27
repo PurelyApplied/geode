@@ -23,12 +23,12 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:' + project.'protobuf-gradle-plugin.version'
+        classpath('com.google.protobuf:protobuf-gradle-plugin:' + project.'protobuf-gradle-plugin.version')
     }
 }
 
 dependencies {
-    compile 'com.google.protobuf:protobuf-java:' + project.'protobuf-java.version'
+    compile('com.google.protobuf:protobuf-java:' + project.'protobuf-java.version')
 }
 
 protobuf {

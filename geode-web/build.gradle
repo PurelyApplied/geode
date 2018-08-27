@@ -18,7 +18,7 @@
 apply plugin: 'war'
 
 dependencies {
-  compileOnly 'javax.servlet:javax.servlet-api:' + project.'javax.servlet-api.version'
+  compileOnly('javax.servlet:javax.servlet-api:' + project.'javax.servlet-api.version')
   compileOnly project(path: ':geode-core', configuration: 'classesOutput')
 
   runtime('org.springframework:spring-aspects:' + project.'springframework.version')
@@ -48,7 +48,7 @@ dependencies {
   testCompile project(':geode-core')
   // have to use output since we exclude the dependent classes from jar :(
   testCompile project(path: ':geode-core', configuration: 'classesOutput')
-  testCompile 'org.springframework:spring-test:' + project.'springframework.version'
+  testCompile('org.springframework:spring-test:' + project.'springframework.version')
   testCompile('org.springframework:spring-webmvc:' + project.'springframework.version')
       {
         exclude module: 'aopalliance'
@@ -66,7 +66,7 @@ dependencies {
       }
 
 
-  distributedTestCompile 'pl.pragmatists:JUnitParams:' + project.'JUnitParams.version'
+  distributedTestCompile('pl.pragmatists:JUnitParams:' + project.'JUnitParams.version')
 
   distributedTestRuntime files(war.destinationDir)
   distributedTestRuntime('org.springframework:spring-webmvc:' + project.'springframework.version')
