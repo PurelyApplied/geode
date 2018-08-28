@@ -101,10 +101,7 @@ apply from: "${scriptDir}/ide.gradle"
 apply from: "${scriptDir}/rat.gradle"
 apply from: "${scriptDir}/docker.gradle"
 apply from: "${scriptDir}/spotless.gradle"
-
-subprojects {
-  apply from: "${rootDir}/gradle/dependency-constraints.gradle"
-}
+apply from: "${scriptDir}/dependency-constraints.gradle"
 
 // Make sure clean task for rootProject runs last
 clean.dependsOn(cleanAll)
