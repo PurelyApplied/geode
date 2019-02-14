@@ -25,21 +25,13 @@ evaluationDependsOn(":geode-core")
 apply plugin: 'distribution'
 apply from: "${project.projectDir}/../gradle/publish.gradle"
 
-// disable artifact generation for this project
-jar.enabled = false
-
 project.ext {artifactName = 'apache-geode'}
 
 publishing {
   publications {
     maven(MavenPublication) {
-      afterEvaluate {
-        artifactId = artifactName
-
-        artifacts = []
-
-        artifact distTar
-      }
+      artifactId = artifactName
+      artifact source: distTar, extension: 'tgz'
     }
   }
 }
@@ -48,19 +40,6 @@ signing {
   afterEvaluate {
     sign distTar
     sign srcDistTar
-  }
-}
-
-logger.info("Gradle doesn't automatically remove the jar artifact even though we disabled it")
-logger.info("this causes publishing to fail.  So we nuke all the disabled artifacts from all configurations.")
-configurations.all {
-  def configName = it.name
-  artifacts.each {
-    logger.info("Pruning configName = " + configName + " name=" + it.name + " extension=" + it.extension + " classifier=" + it.classifier)
-  }
-  artifacts.removeAll{ it.name == jar.baseName && it.extension == 'jar' && it.classifier == jar.classifier }
-  if (artifacts) {
-    logger.info("Artifacts are now: " + artifacts)
   }
 }
 
@@ -135,14 +114,26 @@ task downloadWebServers(type:Copy) {
 dependencies {
   compile(platform(project(':boms:geode-all-bom')))
 
+//  archives project(':boms:geode-all-bom')
+//  archives project(':boms:geode-client-bom')
+//  archives project(':geode-assembly')
   archives project(':geode-common')
-  archives project(':geode-json')
-  archives project(':geode-core')
+//  archives project(':geode-concurrency-test')
   archives project(':geode-connectors')
+  archives project(':geode-core')
+//  archives project(':geode-cq')
+//  archives project(':geode-dunit')
+//  archives project(':geode-experimental-driver')
+  archives project(':geode-json')
+//  archives project(':geode-junit')
   archives project(':geode-lucene')
+//  archives project(':geode-management')
   archives project(':geode-old-client-support')
   archives project(':geode-protobuf')
   archives project(':geode-protobuf-messages')
+//  archives project(':geode-pulse')
+//  archives project(':geode-rebalancer')
+//  archives project(':geode-wan')
   archives project(':geode-web')
   archives project(':geode-web-api')
   archives project(':geode-web-management')
@@ -395,12 +386,145 @@ task docs(type: Javadoc) {
   }
 }
 
+def configDirCopySpec = copySpec {
+  into('config')
+
+  from defaultCacheConfig
+  from defaultDistributionConfig
+  from(project(':geode-core').sourceSets.main.resources.files.find {
+    it.name == 'log4j2.xml'
+  })
+}
+
+def libCopySpec = copySpec {
+  into('lib')
+
+  from {
+    [
+        'geode-common',
+        'geode-connectors',
+        'geode-core',
+        'geode-cq',
+        'geode-json',
+        'geode-lucene',
+        'geode-old-client-support',
+        'geode-protobuf',
+        'geode-protobuf-messages',
+        'geode-rebalancer',
+        'geode-wan',
+    ].collect {
+      [
+          project(':'.concat(it)).configurations.runtimeClasspath,
+          project(':'.concat(it)).configurations.archives.allArtifacts.files
+      ]
+    }.flatten()
+  }
+
+  from configurations.gfshDependencies
+
+  //These tasks are included as closures (wrapped in {}) because gradle may evaluate
+  //this CopySpec before it evaluates the geode-core build file.
+  from { project(':geode-core').webJar }
+  from { project(':geode-core').raJar }
+  from { project(':geode-core').jcaJar }
+
+  // dependency jars
+  from depsJar
+  from gfshDepsJar
+}
+
+def extensionsToolsCopySpec = copySpec {
+  into('tools/Extensions')
+
+  from(project(':geode-web').configurations.archives.allArtifacts.files) {
+    exclude '*.jar'
+  }
+  from(project(':geode-web-api').configurations.archives.allArtifacts.files) {
+    exclude '*.jar'
+  }
+  from(project(':geode-web-management').configurations.archives.allArtifacts.files) {
+    exclude '*.jar'
+  }
+}
+
+def clientToolsCopySpec = copySpec {
+  into('tools/ClientProtocol')
+
+  from { project(':geode-protobuf-messages').zip.outputs.files }
+}
+
+def pulseToolsCopySpec = copySpec {
+  into('tools/Pulse')
+
+  from(project(':geode-pulse').configurations.archives.allArtifacts.files)
+}
+
+def moduleToolsCopySpec = copySpec {
+  into('tools/Modules')
+
+  from { project(':extensions:geode-modules-assembly').distTcServer }
+  from { project(':extensions:geode-modules-assembly').distTcServer30 }
+  from { project(':extensions:geode-modules-assembly').distTomcat }
+  from { project(':extensions:geode-modules-assembly').distAppServer }
+}
+
+def javadocCopySpec = copySpec {
+  into('javadoc')
+
+  from docs
+}
+
+def fullDistributionCopySpec = copySpec {
+  from rootProject.file('README.md')
+  from "${projectDir}/src/main/dist/"
+  with configDirCopySpec, libCopySpec
+  with extensionsToolsCopySpec, clientToolsCopySpec, pulseToolsCopySpec, moduleToolsCopySpec
+  with javadocCopySpec
+}
+
+//noinspection GroovyAssignabilityCheck
+task purgeBFAC(type: Delete) {
+  delete "${buildDir}/bFAC"
+}
+
+//noinspection GroovyAssignabilityCheck
+task bigFatAmericanCopy(type: Copy) {
+  dependsOn purgeBFAC
+  into "${buildDir}/bFAC"
+  with fullDistributionCopySpec
+}
+
+//noinspection GroovyAssignabilityCheck
+task bigFatTar(type: Jar) {
+//  compression = Compression.GZIP
+//  extension = 'tgz'
+  archiveBaseName = 'bigFatTar'
+
+//  into "${buildDir}/bFTar"
+  with fullDistributionCopySpec
+}
+
+
+configurations.remove(configurations.archives)
+configurations {
+  archives
+}
+
+//configurations {
+//  composite
+//}
+artifacts {
+  archives file: bigFatTar.outputs.files.singleFile, name: 'bigFatTar', type: 'jar', builtBy: bigFatTar
+  archives bigFatTar
+//  composite bigFatTar
+}
+
 distributions {
   src {
     baseName = 'apache-geode'
     contents {
       from rootProject.tasks.writeBuildInfo
-      from (rootDir) {
+      from(rootDir) {
         exclude 'KEYS'
         exclude '**/gradlew'
         exclude '**/gradlew.bat'
@@ -447,83 +571,10 @@ distributions {
       exclude '*-sources.jar'
       exclude '*-javadoc.jar'
 
-      from rootProject.file( 'README.md' )
-
-      into ('config') {
-        from defaultCacheConfig
-        from defaultDistributionConfig
-        from (project(':geode-core').sourceSets.main.resources.files.find {
-          it.name == 'log4j2.xml'
-        })
-      }
-
-      into ('lib') {
-        from project(':geode-common').configurations.runtimeClasspath
-        from project(':geode-common').configurations.archives.allArtifacts.files
-        from project(':geode-json').configurations.runtimeClasspath
-        from project(':geode-json').configurations.archives.allArtifacts.files
-        from project(':geode-wan').configurations.runtimeClasspath
-        from project(':geode-wan').configurations.archives.allArtifacts.files
-        from project(':geode-cq').configurations.runtimeClasspath
-        from project(':geode-cq').configurations.archives.allArtifacts.files
-        from project(':geode-core').configurations.runtimeClasspath
-        from project(':geode-core').configurations.archives.allArtifacts.files
-        from project(':geode-lucene').configurations.runtimeClasspath
-        from project(':geode-lucene').configurations.archives.allArtifacts.files
-        from project(':geode-connectors').configurations.runtimeClasspath
-        from project(':geode-connectors').configurations.archives.allArtifacts.files
-        from project(':geode-old-client-support').configurations.runtimeClasspath
-        from project(':geode-old-client-support').configurations.archives.allArtifacts.files
-        from project(':geode-protobuf').configurations.runtimeClasspath
-        from project(':geode-protobuf').configurations.archives.allArtifacts.files
-        from project(':geode-protobuf-messages').configurations.runtimeClasspath
-        from project(':geode-protobuf-messages').configurations.archives.allArtifacts.files
-        from project(':geode-rebalancer').configurations.runtimeClasspath
-        from project(':geode-rebalancer').configurations.archives.allArtifacts.files
-
-        from configurations.gfshDependencies
-
-        //These tasks are included as closures (wrapped in {}) because gradle may evaluate
-        //this CopySpec before it evaluates the geode-core build file.
-        from { project(':geode-core').webJar }
-        from { project(':geode-core').raJar }
-        from { project(':geode-core').jcaJar }
-
-        // dependency jars
-        from depsJar
-        from gfshDepsJar
-      }
-
-      into ('tools/Extensions') {
-        from (project(':geode-web').configurations.archives.allArtifacts.files) {
-          exclude '*.jar'
-        }
-        from (project(':geode-web-api').configurations.archives.allArtifacts.files) {
-          exclude '*.jar'
-        }
-        from (project(':geode-web-management').configurations.archives.allArtifacts.files) {
-          exclude '*.jar'
-        }
-      }
-
-      into('tools/ClientProtocol') {
-        from {project(':geode-protobuf-messages').zip.outputs.files}
-      }
-
-      into ('javadoc') {
-        from docs
-      }
-
-      into ('tools/Pulse') {
-        from (project(':geode-pulse').configurations.archives.allArtifacts.files)
-      }
-
-      into ('tools/Modules') {
-        from {project(':extensions:geode-modules-assembly').distTcServer}
-        from {project(':extensions:geode-modules-assembly').distTcServer30}
-        from {project(':extensions:geode-modules-assembly').distTomcat}
-        from {project(':extensions:geode-modules-assembly').distAppServer}
-      }
+      from rootProject.file('README.md')
+      with configDirCopySpec, libCopySpec
+      with extensionsToolsCopySpec, clientToolsCopySpec, pulseToolsCopySpec, moduleToolsCopySpec
+      with javadocCopySpec
     }
   }
 }

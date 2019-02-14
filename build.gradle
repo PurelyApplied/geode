@@ -16,6 +16,18 @@
  */
 
 buildscript {
+  final classpathVersions = [
+      'nebula-project.version'                     : '5.1.0',
+      'nebula-lint.version'                        : '10.1.0',
+      'gradle-git.version'                         : '1.7.2',
+      'rat-gradle.version'                         : '0.3.1',
+      'sonarqube-gradle-plugin.version'            : '2.6.2',
+      'spotless-plugin-gradle.version'             : '3.10.0',
+      'jmh-gradle-plugin.version'                  : '0.4.7',
+      'gradle-versions-plugin.version'             : '0.17.0',
+      'spring-dependency-management-plugin.version': '1.0.6.RELEASE',
+  ]
+  
   repositories {
     maven { url "https://plugins.gradle.org/m2/" }
     maven { url "https://dl.bintray.com/palantir/releases" }
@@ -27,16 +39,16 @@ buildscript {
     // Newer versions of the nebula plugins require gradle-info-plugin 4.0.2 or higher, which in
     // depends on JGit 5.0.  Conversely, gradle-git relies of JGit 4.0.
     // Be mindful of potential classpath issues when updating any of these three dependencies.
-    classpath "com.netflix.nebula:nebula-project-plugin:5.1.0"
-    classpath "com.netflix.nebula:gradle-lint-plugin:10.1.0"
-    classpath "org.ajoberstar:gradle-git:1.7.2"
+    classpath "com.netflix.nebula:nebula-project-plugin:${classpathVersions.'nebula-project.version'}"
+    classpath "com.netflix.nebula:gradle-lint-plugin:${classpathVersions.'nebula-lint.version'}"
+    classpath "org.ajoberstar:gradle-git:${classpathVersions.'gradle-git.version'}"
 
-    classpath "gradle.plugin.org.nosphere.apache:creadur-rat-gradle:0.3.1"
-    classpath 'org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.6.2'
-    classpath "com.diffplug.spotless:spotless-plugin-gradle:3.10.0"
-    classpath "me.champeau.gradle:jmh-gradle-plugin:0.4.7"
-    classpath 'com.github.ben-manes:gradle-versions-plugin:0.17.0'
-    classpath 'io.spring.gradle:dependency-management-plugin:1.0.6.RELEASE'
+    classpath "gradle.plugin.org.nosphere.apache:creadur-rat-gradle:${classpathVersions.'rat-gradle.version'}"
+    classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:${classpathVersions.'sonarqube-gradle-plugin.version'}"
+    classpath "com.diffplug.spotless:spotless-plugin-gradle:${classpathVersions.'spotless-plugin-gradle.version'}"
+    classpath "me.champeau.gradle:jmh-gradle-plugin:${classpathVersions.'jmh-gradle-plugin.version'}"
+    classpath "com.github.ben-manes:gradle-versions-plugin:${classpathVersions.'gradle-versions-plugin.version'}"
+    classpath "io.spring.gradle:dependency-management-plugin:${classpathVersions.'spring-dependency-management-plugin.version'}"
   }
 }
 
