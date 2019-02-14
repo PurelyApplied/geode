@@ -571,12 +571,23 @@ distributions {
       exclude '*-sources.jar'
       exclude '*-javadoc.jar'
 
-      from rootProject.file('README.md')
-      with configDirCopySpec, libCopySpec
-      with extensionsToolsCopySpec, clientToolsCopySpec, pulseToolsCopySpec, moduleToolsCopySpec
-      with javadocCopySpec
+      with fullDistributionCopySpec
     }
   }
+}
+
+
+jar.configure {
+  baseName = 'apache-geode'
+  archiveClassifier = 'composite'
+
+  exclude '*.asc'
+
+  exclude '*.asc'
+  exclude '*-sources.jar'
+  exclude '*-javadoc.jar'
+
+  with fullDistributionCopySpec
 }
 
 tasks.withType(Test){

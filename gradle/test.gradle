@@ -144,31 +144,31 @@ subprojects {
   }
 
   task repeatDistributedTest(type: RepeatTest) {
-    dependsOn {distributedTest.taskDependencies}
+    dependsOn { distributedTest.taskDependencies }
     classpath = project.sourceSets.distributedTest.runtimeClasspath
     testClassesDirs = project.sourceSets.distributedTest.output.classesDirs
   }
 
   task repeatIntegrationTest(type: RepeatTest) {
-    dependsOn {integrationTest.taskDependencies}
+    dependsOn { integrationTest.taskDependencies }
     classpath = project.sourceSets.integrationTest.runtimeClasspath
     testClassesDirs = project.sourceSets.integrationTest.output.classesDirs
   }
 
   task repeatAcceptanceTest(type: RepeatTest) {
-    dependsOn {acceptanceTest.taskDependencies}
+    dependsOn { acceptanceTest.taskDependencies }
     classpath = project.sourceSets.acceptanceTest.runtimeClasspath
     testClassesDirs = project.sourceSets.acceptanceTest.output.classesDirs
   }
 
   task repeatUpgradeTest(type: RepeatTest) {
-    dependsOn {upgradeTest.taskDependencies}
+    dependsOn { upgradeTest.taskDependencies }
     classpath = project.sourceSets.upgradeTest.runtimeClasspath
     testClassesDirs = project.sourceSets.upgradeTest.output.classesDirs
   }
 
   task repeatUnitTest(type: RepeatTest) {
-    dependsOn {test.taskDependencies}
+    dependsOn { test.taskDependencies }
     // default classpath works for this one.
   }
 
@@ -207,7 +207,7 @@ subprojects {
 
         maxHeapSize '768m'
         jvmArgs = ['-XX:+HeapDumpOnOutOfMemoryError', '-ea']
-        if (project.hasProperty('testJVMVer') &&  testJVMVer.toInteger() >= 9) {
+        if (project.hasProperty('testJVMVer') && testJVMVer.toInteger() >= 9) {
           jvmArgs += ["--add-opens", "java.xml/jdk.xml.internal=ALL-UNNAMED"]
           jvmArgs += ["--add-opens", "java.base/jdk.internal.module=ALL-UNNAMED"]
           jvmArgs += ["--add-opens", "java.base/java.lang.module=ALL-UNNAMED"]
@@ -268,16 +268,17 @@ subprojects {
     description 'Run this task before checking in code to validate changes. It runs tests beyond unitTest'
   }
 
-  tasks.withType(Test).plus([build,check]).each {
+  tasks.withType(Test).plus([build, check]).each {
     it.finalizedBy combineReports
     combineReports.mustRunAfter it
   }
-}
 
-classes.dependsOn subprojects.compileTestJava
-classes.dependsOn subprojects.compileIntegrationTestJava
-classes.dependsOn subprojects.compileDistributedTestJava
-classes.dependsOn subprojects.compileAcceptanceTestJava
-classes.dependsOn subprojects.compileUiTestJava
-classes.dependsOn subprojects.compilePerformanceTestJava
-classes.dependsOn subprojects.compileUpgradeTestJava
+
+  rootProject.classes.dependsOn(project.compileTestJava)
+  rootProject.classes.dependsOn(project.compileIntegrationTestJava)
+  rootProject.classes.dependsOn(project.compileDistributedTestJava)
+  rootProject.classes.dependsOn(project.compileAcceptanceTestJava)
+  rootProject.classes.dependsOn(project.compileUiTestJava)
+  rootProject.classes.dependsOn(project.compilePerformanceTestJava)
+  rootProject.classes.dependsOn(project.compileUpgradeTestJava)
+}
