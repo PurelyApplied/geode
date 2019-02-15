@@ -1,3 +1,5 @@
+import java.nio.file.Paths
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -22,14 +24,16 @@ apply plugin: 'signing'
 // The published bom will constrain versions within geode of any subproject with this property set.
 project.ext.set('constrainVersionInBom', true)
 
-task sourcesJar(type: Jar) {
-  from sourceSets.main.allJava
-  classifier = 'sources'
-}
+if (project.name != 'geode-assembly') {
+  task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    classifier = 'sources'
+  }
 
-task javadocJar(type: Jar) {
-  from javadoc
-  classifier = 'javadoc'
+  task javadocJar(type: Jar) {
+    from javadoc
+    classifier = 'javadoc'
+  }
 }
 
 def apacheLicense = '''
@@ -52,12 +56,14 @@ def apacheLicense = '''
 publishing {
   publications {
     maven(MavenPublication) {
-      from components.java
+      if (project.name != 'geode-assembly') {
+        from components.java
 
-      // use the (possibly empty) Jar tasks above for sources and javadoc
-      artifact sourcesJar
-      artifact javadocJar
-
+        // use the (possibly empty) Jar tasks above for sources and javadoc
+        artifact sourcesJar
+        artifact javadocJar
+      }
+      
       pom {
         name = 'Apache Geode'
         description = 'Apache Geode provides a database-like consistency model, reliable transaction processing and a shared-nothing architecture to maintain very low latency performance with high concurrency processing'
@@ -80,14 +86,20 @@ publishing {
           // This black magic checks to see if a dependency has the flag ext.optional=true
           // set on it, and if so marks the dependency as optional in the maven pom
           def depMap = project.configurations.compile.dependencies.collectEntries { [it.name, it] }
-          def runtimeDeps = project.configurations.runtime.dependencies.collectEntries {
-            [it.name, it]
+          def runtimeConfig = project.configurations.findByName('runtime')
+          if (runtimeConfig) {
+            def runtimeDeps = runtimeConfig.dependencies.collectEntries {
+              [it.name, it]
+            }
+            depMap.putAll(runtimeDeps)
           }
-          def runtimeOnlyDeps = project.configurations.runtimeOnly.dependencies.collectEntries {
-            [it.name, it]
+          def runtimeOnlyConfig = project.configurations.findByName('runtimeOnly')
+          if (runtimeOnlyConfig) {
+            def runtimeOnlyDeps = runtimeOnlyConfig.dependencies.collectEntries {
+              [it.name, it]
+            }
+            depMap.putAll(runtimeOnlyDeps)
           }
-          depMap.putAll(runtimeDeps)
-          depMap.putAll(runtimeOnlyDeps)
           asNode().dependencies.dependency.findAll {
             def dep = depMap.get(it.artifactId.text())
             return dep?.hasProperty('optional') && dep.optional
@@ -145,6 +157,8 @@ signing {
 
 task install(dependsOn: publishToMavenLocal) {}
 
+def expectedPomFile = Paths.get(projectDir.toString(), 'src', 'test', 'resources', 'expected-pom.xml')
+
 task('checkPom') {
   // The XmlParser used below has a strange tendency to return lists of fields rather than the field
   // you actually want. Be careful with that, future developer.
@@ -152,7 +166,7 @@ task('checkPom') {
   dependsOn('generatePomFileForMavenPublication')
   description 'Checks the generated POM against an expected POM for dependency changes.' +
       '  Ignores versions of Apache Geode dependencies.'
-  def expectedPomFile = sourceSets.test.resources.getSourceDirectories().first().toPath().resolve("expected-pom.xml")
+
   def actualPomFile = generatePomFileForMavenPublication.outputs.files.first()
   def thisOutput = project.buildDir.toPath().resolve('reports').resolve('checkPom.out')
   inputs.files { [expectedPomFile, actualPomFile] }
@@ -266,7 +280,7 @@ check.dependsOn('checkPom')
 task updateExpectedPom(dependsOn: generatePomFileForMavenPublication, type: Copy) {
   description 'After having verified changes with checkPom, this task will perform the copy.'
 
-  def expectedPomDir = sourceSets.test.resources.getSourceDirectories().first().toURI()
+  def expectedPomDir = expectedPomFile.parent
   def actualPomFile = generatePomFileForMavenPublication.outputs.files.first()
   if (tasks.getByName("generatePomFileForMavenPublication").enabled) {
     from actualPomFile

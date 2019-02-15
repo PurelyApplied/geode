@@ -20,11 +20,13 @@ import org.apache.geode.gradle.plugins.DependencyConstraints
 
 import java.nio.file.Paths
 
-evaluationDependsOn(":geode-core")
 
+plugins {
+  id 'maven'
+}
+evaluationDependsOn(":geode-core")
 apply plugin: 'distribution'
 apply from: "${project.projectDir}/../gradle/publish.gradle"
-
 project.ext {artifactName = 'apache-geode'}
 
 publishing {
@@ -88,9 +90,12 @@ configurations {
   webServerTomcat9
   webServerJetty
 
+  geodeArchives {
+    description "An 'archives' configuration without the legacy publication implications"
+  }
   javadocOnly {
     description 'Projects that must be included in the JavaDocs.'
-    extendsFrom archives
+    extendsFrom geodeArchives
   }
 }
 
@@ -114,21 +119,21 @@ task downloadWebServers(type:Copy) {
 dependencies {
   compile(platform(project(':boms:geode-all-bom')))
 
-  archives project(':geode-common')
-  archives project(':geode-connectors')
-  archives project(':geode-core')
-  archives project(':geode-json')
-  archives project(':geode-lucene')
-  archives project(':geode-old-client-support')
-  archives project(':geode-protobuf')
-  archives project(':geode-protobuf-messages')
-  archives project(':geode-web')
-  archives project(':geode-web-api')
-  archives project(':geode-web-management')
-  archives project(':geode-management')
-  archives project(':geode-wan')
-  archives project(':geode-cq')
-  archives project(':geode-rebalancer')
+  geodeArchives project(':geode-common')
+  geodeArchives project(':geode-connectors')
+  geodeArchives project(':geode-core')
+  geodeArchives project(':geode-json')
+  geodeArchives project(':geode-lucene')
+  geodeArchives project(':geode-old-client-support')
+  geodeArchives project(':geode-protobuf')
+  geodeArchives project(':geode-protobuf-messages')
+  geodeArchives project(':geode-web')
+  geodeArchives project(':geode-web-api')
+  geodeArchives project(':geode-web-management')
+  geodeArchives project(':geode-management')
+  geodeArchives project(':geode-wan')
+  geodeArchives project(':geode-cq')
+  geodeArchives project(':geode-rebalancer')
 
   javadocOnly project(':extensions:geode-modules')
   javadocOnly project(':extensions:geode-modules-session')
@@ -138,76 +143,76 @@ dependencies {
   javadocOnly project(':extensions:geode-modules-tomcat8')
   javadocOnly project(':geode-experimental-driver')
 
-  testCompile(project(':geode-core'))
-  testCompile(project(':geode-junit')) {
-    exclude module: 'geode-core'
-  }
-  testRuntime(project(':geode-old-versions'))
+//  testCompile(project(':geode-core'))
+//  testCompile(project(':geode-junit')) {
+//    exclude module: 'geode-core'
+//  }
+//  testRuntime(project(':geode-old-versions'))
 
-  acceptanceTestRuntime(project(':geode-old-versions'))
-
-
-  integrationTestCompile(project(':geode-core'))
-  integrationTestCompile(project(':geode-junit')) {
-    exclude module: 'geode-core'
-  }
-  integrationTestCompile(project(':geode-dunit')) {
-    exclude module: 'geode-core'
-  }
-  integrationTestCompile(project(':geode-pulse'))
-  integrationTestCompile(project(':geode-assembly:geode-assembly-test'))
-  integrationTestCompile('org.apache.httpcomponents:httpclient')
-  integrationTestCompile('javax.annotation:javax.annotation-api')
-
-
-  distributedTestCompile(project(':geode-core'))
-  distributedTestCompile(project(':geode-dunit')){
-    exclude module: 'geode-core'
-  }
-  distributedTestCompile(project(':extensions:session-testing-war'))
-  distributedTestCompile(project(':geode-assembly:geode-assembly-test'))
-  distributedTestCompile('org.apache.httpcomponents:httpclient')
-
-  distributedTestRuntime(project(':extensions:geode-modules-session-internal')) {
-    exclude group: 'org.apache.tomcat'
-  }
-  distributedTestRuntime('org.codehaus.cargo:cargo-core-uberjar')
-
-
-  acceptanceTestCompile(project(':geode-core'))
-  acceptanceTestCompile(project(':geode-dunit')) {
-    exclude module: 'geode-core'
-  }
-  acceptanceTestCompile(project(':geode-assembly:geode-assembly-test'))
-  acceptanceTestCompile('org.apache.httpcomponents:httpclient')
-
-
-  uiTestCompile(project(':geode-core'))
-  uiTestCompile(project(':geode-dunit')) {
-    exclude module: 'geode-core'
-  }
-  uiTestCompile(project(':geode-pulse'))
-  uiTestCompile(project(':geode-pulse:geode-pulse-test'))
-  uiTestCompile(project(':geode-assembly:geode-assembly-test'))
-  uiTestCompile('org.seleniumhq.selenium:selenium-api')
-  uiTestCompile('org.seleniumhq.selenium:selenium-remote-driver')
-  uiTestCompile('org.seleniumhq.selenium:selenium-support')
-
-  uiTestRuntime(project(':geode-core'))
-  uiTestRuntime('org.seleniumhq.selenium:selenium-chrome-driver')
-
-
-  upgradeTestCompile(project(':geode-core'))
-  upgradeTestCompile(project(':geode-dunit')) {
-    exclude module: 'geode-core'
-  }
-  upgradeTestCompile(project(':geode-assembly:geode-assembly-test'))
-
-  upgradeTestRuntime(project(':geode-old-versions'))
-  upgradeTestRuntime(project(':extensions:session-testing-war'))
-  upgradeTestRuntime('org.codehaus.cargo:cargo-core-uberjar')
-  upgradeTestRuntime('org.apache.httpcomponents:httpclient')
-  upgradeTestRuntime files({ downloadWebServers } )
+//  acceptanceTestRuntime(project(':geode-old-versions'))
+//
+//
+//  integrationTestCompile(project(':geode-core'))
+//  integrationTestCompile(project(':geode-junit')) {
+//    exclude module: 'geode-core'
+//  }
+//  integrationTestCompile(project(':geode-dunit')) {
+//    exclude module: 'geode-core'
+//  }
+//  integrationTestCompile(project(':geode-pulse'))
+//  integrationTestCompile(project(':geode-assembly:geode-assembly-test'))
+//  integrationTestCompile('org.apache.httpcomponents:httpclient')
+//  integrationTestCompile('javax.annotation:javax.annotation-api')
+//
+//
+//  distributedTestCompile(project(':geode-core'))
+//  distributedTestCompile(project(':geode-dunit')){
+//    exclude module: 'geode-core'
+//  }
+//  distributedTestCompile(project(':extensions:session-testing-war'))
+//  distributedTestCompile(project(':geode-assembly:geode-assembly-test'))
+//  distributedTestCompile('org.apache.httpcomponents:httpclient')
+//
+//  distributedTestRuntime(project(':extensions:geode-modules-session-internal')) {
+//    exclude group: 'org.apache.tomcat'
+//  }
+//  distributedTestRuntime('org.codehaus.cargo:cargo-core-uberjar')
+//
+//
+//  acceptanceTestCompile(project(':geode-core'))
+//  acceptanceTestCompile(project(':geode-dunit')) {
+//    exclude module: 'geode-core'
+//  }
+//  acceptanceTestCompile(project(':geode-assembly:geode-assembly-test'))
+//  acceptanceTestCompile('org.apache.httpcomponents:httpclient')
+//
+//
+//  uiTestCompile(project(':geode-core'))
+//  uiTestCompile(project(':geode-dunit')) {
+//    exclude module: 'geode-core'
+//  }
+//  uiTestCompile(project(':geode-pulse'))
+//  uiTestCompile(project(':geode-pulse:geode-pulse-test'))
+//  uiTestCompile(project(':geode-assembly:geode-assembly-test'))
+//  uiTestCompile('org.seleniumhq.selenium:selenium-api')
+//  uiTestCompile('org.seleniumhq.selenium:selenium-remote-driver')
+//  uiTestCompile('org.seleniumhq.selenium:selenium-support')
+//
+//  uiTestRuntime(project(':geode-core'))
+//  uiTestRuntime('org.seleniumhq.selenium:selenium-chrome-driver')
+//
+//
+//  upgradeTestCompile(project(':geode-core'))
+//  upgradeTestCompile(project(':geode-dunit')) {
+//    exclude module: 'geode-core'
+//  }
+//  upgradeTestCompile(project(':geode-assembly:geode-assembly-test'))
+//
+//  upgradeTestRuntime(project(':geode-old-versions'))
+//  upgradeTestRuntime(project(':extensions:session-testing-war'))
+//  upgradeTestRuntime('org.codehaus.cargo:cargo-core-uberjar')
+//  upgradeTestRuntime('org.apache.httpcomponents:httpclient')
+//  upgradeTestRuntime files({ downloadWebServers } )
 
   //Web servers used for session module testing
   webServerTomcat6('apache:tomcat:' + DependencyConstraints.get('tomcat6.version') + '@zip')
@@ -222,7 +227,10 @@ dependencies {
   }
 }
 
-task defaultDistributionConfig(type: JavaExec, dependsOn: classes) {
+task defaultDistributionConfig(type: JavaExec) {
+  inputs.files {
+    project(':geode-core').sourceSets.main.runtimeClasspath
+  }
   outputs.file file("$buildDir/gemfire.properties")
   main 'org.apache.geode.distributed.internal.DefaultPropertiesGenerator'
   classpath project(':geode-core').sourceSets.main.runtimeClasspath
@@ -233,7 +241,10 @@ task defaultDistributionConfig(type: JavaExec, dependsOn: classes) {
   }
 }
 
-task defaultCacheConfig(type: JavaExec, dependsOn: classes) {
+task defaultCacheConfig(type: JavaExec) {
+  inputs.files {
+    project(':geode-core').sourceSets.main.runtimeClasspath
+  }
   outputs.file file("$buildDir/cache.xml")
   main 'org.apache.geode.internal.cache.xmlcache.CacheXmlGenerator'
   classpath project(':geode-core').sourceSets.main.runtimeClasspath
@@ -248,12 +259,12 @@ task defaultCacheConfig(type: JavaExec, dependsOn: classes) {
 // be included in the filter logic below.
 def cp = {
   // first add all the dependent project jars
-  def jars = configurations.archives.dependencies.collect { it.dependencyProject }
+  def jars = configurations.geodeArchives.dependencies.collect { it.dependencyProject }
     .findAll { !(it.name.contains('geode-web') || it.name.contains('geode-pulse')) }
     .collect { it.jar.archiveName }
 
   // then add all the dependencies of the dependent jars
-  def depJars = configurations.archives.dependencies.collect {
+  def depJars = configurations.geodeArchives.dependencies.collect {
     it.dependencyProject.findAll { !(it.name.contains('geode-web') || it.name.contains('geode-pulse')) }
       .collect { it.configurations.runtimeClasspath.collect { it.getName() }.findAll { !(
         // exclude mx4j, once the deprecated code is deleted we can remove these entirely
@@ -283,7 +294,7 @@ def cp = {
   return jars.plus(depJars).unique().join(' ')
 }
 
-task configureDepsJar(dependsOn: configurations.archives.dependencies) {
+task configureDepsJar(dependsOn: configurations.geodeArchives.dependencies) {
   def output = project.buildDir.toPath().resolve('reports').resolve('deps_jar_cp.txt')
   outputs.file {
     output
@@ -426,7 +437,7 @@ def extensionsToolsCopySpec = copySpec {
   from { project(':geode-web').configurations.archives.allArtifacts.files }
   from { project(':geode-web-api').configurations.archives.allArtifacts.files }
   from { project(':geode-web-management').configurations.archives.allArtifacts.files }
-  
+
   exclude '*.jar'
 }
 
@@ -523,18 +534,73 @@ distributions {
 }
 
 
-jar.configure {
-  baseName = 'apache-geode'
-  archiveClassifier = 'composite'
+//noinspection GroovyAssignabilityCheck
+task writeFatJarWarning() {
+  def readmeFile = Paths.get(buildDir.toString(), 'warnings.txt')
+  outputs.file readmeFile
 
-  exclude '*.asc'
-
-  exclude '*.asc'
-  exclude '*-sources.jar'
-  exclude '*-javadoc.jar'
-
-  with fullDistributionCopySpec
+  doLast {
+    def warning = """
+This 'fat jar' mirrors the content of the apache-geode.tgz distribution (without the compression).
+While it should not, in fact, be a Jar at all, it has been packaged this way
+for consumption by composite gradle builds, which only recognize 'legacy' published Java Jars. 
+"""
+    file(readmeFile).write(warning)
+  }
 }
+
+configurations {
+  archives
+}
+
+configurations.archives.artifacts.removeIf( { true } )
+
+artifacts {
+  archives distTar
+}
+task doIt() {
+  doLast {
+    println(configurations.archives.allArtifacts.collect {it })
+  }
+}
+distTar.configure {
+  distsDirName = 'libs'
+//  archiveClassifier = 'composite'
+}
+
+repositories {
+  flatDir {
+    name "fileRepo"
+    dirs "repo"
+  }
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      repository(url: 'file://repo')
+    }
+  }
+//  repositories {
+//    add project.repositories.fileRepo
+//  }
+}
+
+//jar.configure {
+//  baseName = 'apache-geode'
+//  archiveClassifier = 'composite'
+//
+//  from writeFatJarWarning
+//
+//  exclude '*.asc'
+//
+//  exclude '*.asc'
+//  exclude '*-sources.jar'
+//  exclude '*-javadoc.jar'
+//
+//
+//  with fullDistributionCopySpec
+//}
 
 tasks.withType(Test){
   dependsOn installDist
@@ -545,10 +611,10 @@ tasks.withType(Test){
 build.dependsOn installDist
 
 installDist.dependsOn ':extensions:geode-modules-assembly:dist'
-distributedTest.dependsOn ':extensions:session-testing-war:war'
-distributedTest.dependsOn ':geode-old-versions:build'
-upgradeTest.dependsOn ':extensions:session-testing-war:war'
-upgradeTest.dependsOn ':geode-old-versions:build'
+//distributedTest.dependsOn ':extensions:session-testing-war:war'
+//distributedTest.dependsOn ':geode-old-versions:build'
+//upgradeTest.dependsOn ':extensions:session-testing-war:war'
+//upgradeTest.dependsOn ':geode-old-versions:build'
 
 /**Print the names of all jar files in a fileTree */
 def printJars(tree) {
