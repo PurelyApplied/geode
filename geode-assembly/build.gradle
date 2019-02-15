@@ -114,26 +114,14 @@ task downloadWebServers(type:Copy) {
 dependencies {
   compile(platform(project(':boms:geode-all-bom')))
 
-//  archives project(':boms:geode-all-bom')
-//  archives project(':boms:geode-client-bom')
-//  archives project(':geode-assembly')
   archives project(':geode-common')
-//  archives project(':geode-concurrency-test')
   archives project(':geode-connectors')
   archives project(':geode-core')
-//  archives project(':geode-cq')
-//  archives project(':geode-dunit')
-//  archives project(':geode-experimental-driver')
   archives project(':geode-json')
-//  archives project(':geode-junit')
   archives project(':geode-lucene')
-//  archives project(':geode-management')
   archives project(':geode-old-client-support')
   archives project(':geode-protobuf')
   archives project(':geode-protobuf-messages')
-//  archives project(':geode-pulse')
-//  archives project(':geode-rebalancer')
-//  archives project(':geode-wan')
   archives project(':geode-web')
   archives project(':geode-web-api')
   archives project(':geode-web-management')
@@ -155,7 +143,6 @@ dependencies {
     exclude module: 'geode-core'
   }
   testRuntime(project(':geode-old-versions'))
-
 
   acceptanceTestRuntime(project(':geode-old-versions'))
 
@@ -420,7 +407,7 @@ def libCopySpec = copySpec {
     }.flatten()
   }
 
-  from configurations.gfshDependencies
+  from { configurations.gfshDependencies }
 
   //These tasks are included as closures (wrapped in {}) because gradle may evaluate
   //this CopySpec before it evaluates the geode-core build file.
@@ -429,22 +416,18 @@ def libCopySpec = copySpec {
   from { project(':geode-core').jcaJar }
 
   // dependency jars
-  from depsJar
-  from gfshDepsJar
+  from { depsJar }
+  from { gfshDepsJar }
 }
 
 def extensionsToolsCopySpec = copySpec {
   into('tools/Extensions')
 
-  from(project(':geode-web').configurations.archives.allArtifacts.files) {
-    exclude '*.jar'
-  }
-  from(project(':geode-web-api').configurations.archives.allArtifacts.files) {
-    exclude '*.jar'
-  }
-  from(project(':geode-web-management').configurations.archives.allArtifacts.files) {
-    exclude '*.jar'
-  }
+  from { project(':geode-web').configurations.archives.allArtifacts.files }
+  from { project(':geode-web-api').configurations.archives.allArtifacts.files }
+  from { project(':geode-web-management').configurations.archives.allArtifacts.files }
+  
+  exclude '*.jar'
 }
 
 def clientToolsCopySpec = copySpec {
@@ -456,7 +439,7 @@ def clientToolsCopySpec = copySpec {
 def pulseToolsCopySpec = copySpec {
   into('tools/Pulse')
 
-  from(project(':geode-pulse').configurations.archives.allArtifacts.files)
+  from { project(':geode-pulse').configurations.archives.allArtifacts.files }
 }
 
 def moduleToolsCopySpec = copySpec {
@@ -471,59 +454,22 @@ def moduleToolsCopySpec = copySpec {
 def javadocCopySpec = copySpec {
   into('javadoc')
 
-  from docs
+  from { docs }
 }
 
 def fullDistributionCopySpec = copySpec {
-  from rootProject.file('README.md')
-  from "${projectDir}/src/main/dist/"
+  from { rootProject.file('README.md') }
+  from { "${projectDir}/src/main/dist/" }
   with configDirCopySpec, libCopySpec
   with extensionsToolsCopySpec, clientToolsCopySpec, pulseToolsCopySpec, moduleToolsCopySpec
   with javadocCopySpec
-}
-
-//noinspection GroovyAssignabilityCheck
-task purgeBFAC(type: Delete) {
-  delete "${buildDir}/bFAC"
-}
-
-//noinspection GroovyAssignabilityCheck
-task bigFatAmericanCopy(type: Copy) {
-  dependsOn purgeBFAC
-  into "${buildDir}/bFAC"
-  with fullDistributionCopySpec
-}
-
-//noinspection GroovyAssignabilityCheck
-task bigFatTar(type: Jar) {
-//  compression = Compression.GZIP
-//  extension = 'tgz'
-  archiveBaseName = 'bigFatTar'
-
-//  into "${buildDir}/bFTar"
-  with fullDistributionCopySpec
-}
-
-
-configurations.remove(configurations.archives)
-configurations {
-  archives
-}
-
-//configurations {
-//  composite
-//}
-artifacts {
-  archives file: bigFatTar.outputs.files.singleFile, name: 'bigFatTar', type: 'jar', builtBy: bigFatTar
-  archives bigFatTar
-//  composite bigFatTar
 }
 
 distributions {
   src {
     baseName = 'apache-geode'
     contents {
-      from rootProject.tasks.writeBuildInfo
+      from { rootProject.tasks.writeBuildInfo }
       from(rootDir) {
         exclude 'KEYS'
         exclude '**/gradlew'
