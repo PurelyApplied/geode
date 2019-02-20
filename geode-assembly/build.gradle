@@ -107,6 +107,7 @@ task defaultCacheConfig(type: JavaExec) {
     buildDir.mkdirs()
   }
 }
+
 task defaultDistributionConfig(type: JavaExec) {
   inputs.files {
     project(':geode-core').sourceSets.main.runtimeClasspath
@@ -120,6 +121,7 @@ task defaultDistributionConfig(type: JavaExec) {
     buildDir.mkdirs()
   }
 }
+
 def docsDir = file("$buildDir/javadocs")
 task docs(type: Javadoc) {
   options.addStringOption('Xdoclint:none', '-quiet')
@@ -151,6 +153,7 @@ task docs(type: Javadoc) {
     }
   }
 }
+
 def configDirCopySpec = copySpec {
   into('config')
 
@@ -230,12 +233,9 @@ distTar.configure {
 
 
 gradle.taskGraph.whenReady( { graph ->
-  
- 
   tasks.withType(Jar).each { jarTasks ->
     distTar.dependsOn(jarTasks)
   }
-
 
   tasks.withType(AbstractArchiveTask).findAll {
     it.name.toLowerCase().contains("dist")
