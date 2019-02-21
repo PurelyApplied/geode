@@ -26,9 +26,8 @@ allprojects {
     // "opt in", rather than having the root project inject this configuration into all projects.
     apply plugin: 'java-platform'
   }
-  if (project.name != "geode-assembly") {
-    apply plugin: 'java-library'
-  }
+  apply plugin: 'java-library'
+
 
   sourceCompatibility = 1.8
   targetCompatibility = 1.8
@@ -36,95 +35,93 @@ allprojects {
 }
 
 subprojects {
-  if (project.name != "geode-assembly") {
 
-    dependencies {
-      // log4j-core has an annotation processor that is passed on the compile-classpath via geode-core and others.
-      // Fix Gradle warning here until we clean up our own classpath
-      annotationProcessor 'org.apache.logging.log4j:log4j-core:' + DependencyConstraints.get('log4j.version')
+  dependencies {
+    // log4j-core has an annotation processor that is passed on the compile-classpath via geode-core and others.
+    // Fix Gradle warning here until we clean up our own classpath
+    annotationProcessor 'org.apache.logging.log4j:log4j-core:' + DependencyConstraints.get('log4j.version')
+  }
+
+  String javaVersion = System.properties['java.version']
+  if (javaVersion.startsWith("1.8.0") && javaVersion.split("-")[0].split("_")[1].toInteger() < 121) {
+    throw new GradleException("Java version 1.8.0_121 or later required, but was " + javaVersion)
+  }
+
+  // apply compiler options
+  gradle.taskGraph.whenReady({ graph ->
+    tasks.withType(JavaCompile).each { javac ->
+      javac.configure {
+        sourceCompatibility '1.8'
+        targetCompatibility '1.8'
+        options.encoding = 'UTF-8'
+      }
+      javac.options.incremental = true
+      javac.options.fork = true
+      javac.options.forkOptions.with({
+        memoryMaximumSize = "768m"
+      })
+      if (project.hasProperty('compileJVM') && !compileJVM.trim().isEmpty()) {
+        javac.options.forkOptions.executable = compileJVM + "/bin/javac"
+      }
     }
+  })
 
-    String javaVersion = System.properties['java.version']
-    if (javaVersion.startsWith("1.8.0") && javaVersion.split("-")[0].split("_")[1].toInteger() < 121) {
-      throw new GradleException("Java version 1.8.0_121 or later required, but was " + javaVersion)
-    }
-
-    // apply compiler options
-    gradle.taskGraph.whenReady({ graph ->
-      tasks.withType(JavaCompile).each { javac ->
-        javac.configure {
-          sourceCompatibility '1.8'
-          targetCompatibility '1.8'
-          options.encoding = 'UTF-8'
-        }
-        javac.options.incremental = true
-        javac.options.fork = true
-        javac.options.forkOptions.with({
-          memoryMaximumSize = "768m"
-        })
-        if (project.hasProperty('compileJVM') && !compileJVM.trim().isEmpty()) {
-          javac.options.forkOptions.executable = compileJVM + "/bin/javac"
+  // apply default manifest
+  gradle.taskGraph.whenReady({ graph ->
+    tasks.withType(Jar).each { jar ->
+      jar.doFirst {
+        manifest {
+          attributes(
+              "Manifest-Version": "1.0",
+              "Created-By": System.getProperty("user.name"),
+              "Title": rootProject.name,
+              "Version": version,
+              "Organization": productOrg
+          )
         }
       }
-    })
-
-    // apply default manifest
-    gradle.taskGraph.whenReady({ graph ->
-      tasks.withType(Jar).each { jar ->
-        jar.doFirst {
-          manifest {
-            attributes(
-                "Manifest-Version": "1.0",
-                "Created-By": System.getProperty("user.name"),
-                "Title": rootProject.name,
-                "Version": version,
-                "Organization": productOrg
-            )
+      jar.metaInf {
+        from("$rootDir/LICENSE")
+        jar.doLast {
+          if (jar.source.filter({ it.name.contains('NOTICE') }).empty) {
+            from("$rootDir/NOTICE")
           }
         }
-        jar.metaInf {
-          from("$rootDir/LICENSE")
-          jar.doLast {
-            if (jar.source.filter({ it.name.contains('NOTICE') }).empty) {
-              from("$rootDir/NOTICE")
-            }
-          }
-        }
-      }
-    })
-
-    configurations {
-      testOutput {
-        extendsFrom testCompile
-        description 'a dependency that exposes test artifacts'
       }
     }
+  })
 
-    // This ensures that javadoc and source jars also have any prefix paths stripped and will
-    // be created as libs/foo-sources.jar instead of libs/extensions/foo-sources.jar for example.
-    tasks.all { task ->
-      if (task instanceof Jar) {
-        baseName = project.name
-      }
+  configurations {
+    testOutput {
+      extendsFrom testCompile
+      description 'a dependency that exposes test artifacts'
     }
+  }
 
-    task jarTest(type: Jar, dependsOn: testClasses) {
-      description 'Assembles a jar archive of test classes.'
-      from sourceSets.test.output
-      classifier 'test'
+  // This ensures that javadoc and source jars also have any prefix paths stripped and will
+  // be created as libs/foo-sources.jar instead of libs/extensions/foo-sources.jar for example.
+  tasks.all { task ->
+    if (task instanceof Jar) {
+      baseName = project.name
     }
+  }
 
-    artifacts {
-      testOutput jarTest
-    }
+  task jarTest(type: Jar, dependsOn: testClasses) {
+    description 'Assembles a jar archive of test classes.'
+    from sourceSets.test.output
+    classifier 'test'
+  }
 
-    javadoc {
-      destinationDir = file("$buildDir/javadoc")
-      options.addStringOption('Xdoclint:none', '-quiet')
-      options.encoding = 'UTF-8'
-      exclude "**/internal/**"
+  artifacts {
+    testOutput jarTest
+  }
 
-      classpath += configurations.compileOnly
-    }
+  javadoc {
+    destinationDir = file("$buildDir/javadoc")
+    options.addStringOption('Xdoclint:none', '-quiet')
+    options.encoding = 'UTF-8'
+    exclude "**/internal/**"
+
+    classpath += configurations.compileOnly
   }
 }

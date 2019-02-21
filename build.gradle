@@ -195,3 +195,5 @@ if (project.hasProperty('askpass')) {
     }
   }
 }
+
+rootProject.clean.dependsOn(rootProject.subprojects*.getTasksByName('clean', true))
