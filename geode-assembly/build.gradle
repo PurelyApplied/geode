@@ -494,54 +494,6 @@ build.dependsOn(distTar)
 //  }
 //}
 //
-
-//
-//
-//
-////noinspection GroovyAssignabilityCheck
-//task writeFatJarWarning() {
-//  def readmeFile = Paths.get(buildDir.toString(), 'warnings.txt')
-//  outputs.file readmeFile
-//
-//  doLast {
-//    def warning = """
-//This 'fat jar' mirrors the content of the apache-geode.tgz distribution (without the compression).
-//While it should not, in fact, be a Jar at all, it has been packaged this way
-//for consumption by composite gradle builds, which only recognize 'legacy' published Java Jars. 
-//"""
-//    file(readmeFile).write(warning)
-//  }
-//}
-//
-////configurations {
-////  archives
-////}
-////
-////configurations.archives.artifacts.removeIf( { true } )
-//
-//task doIt() {
-//  doLast {
-//    println(configurations.archives.allArtifacts.collect {it })
-//  }
-//}
-//
-//
-////jar.configure {
-////  baseName = 'apache-geode'
-////  archiveClassifier = 'composite'
-////
-////  from writeFatJarWarning
-////
-////  exclude '*.asc'
-////
-////  exclude '*.asc'
-////  exclude '*-sources.jar'
-////  exclude '*-javadoc.jar'
-////
-////
-////  with fullDistributionCopySpec
-////}
-//
 //tasks.withType(Test){
 //  dependsOn installDist
 //  environment 'GEODE_HOME', "$buildDir/install/${distributions.main.baseName}"
