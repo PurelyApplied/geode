@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import org.apache.geode.internal.logging.LogService;
-import org.apache.geode.management.internal.api.ClusterManagementResult;
+import org.apache.geode.management.api.ClusterManagementResult;
 import org.apache.geode.management.internal.exceptions.EntityExistsException;
 import org.apache.geode.security.AuthenticationFailedException;
 import org.apache.geode.security.NotAuthorizedException;
@@ -44,13 +44,13 @@ public class ManagementControllerAdvice {
 
   @ExceptionHandler(EntityExistsException.class)
   public ResponseEntity<ClusterManagementResult> entityExists(final Exception e) {
-    // no need to log the error stack. User only needs to know the message.
-    return new ResponseEntity<>(new ClusterManagementResult(false, e.getMessage()),
-        HttpStatus.CONFLICT);
+    // for idempotency, we treat EntityExistsException as OK
+    return new ResponseEntity<>(new ClusterManagementResult(true, e.getMessage()),
+        HttpStatus.OK);
   }
 
   @ExceptionHandler({AuthenticationFailedException.class, AuthenticationException.class})
-  public ResponseEntity<ClusterManagementResult> unauthorized(AuthenticationFailedException e) {
+  public ResponseEntity<ClusterManagementResult> unauthorized(Exception e) {
     return new ResponseEntity<>(new ClusterManagementResult(false, e.getMessage()),
         HttpStatus.UNAUTHORIZED);
   }
@@ -63,6 +63,12 @@ public class ManagementControllerAdvice {
 
   @ExceptionHandler(MalformedObjectNameException.class)
   public ResponseEntity<ClusterManagementResult> badRequest(final MalformedObjectNameException e) {
+    return new ResponseEntity<>(new ClusterManagementResult(false, e.getMessage()),
+        HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<ClusterManagementResult> badRequest(final IllegalArgumentException e) {
     return new ResponseEntity<>(new ClusterManagementResult(false, e.getMessage()),
         HttpStatus.BAD_REQUEST);
   }

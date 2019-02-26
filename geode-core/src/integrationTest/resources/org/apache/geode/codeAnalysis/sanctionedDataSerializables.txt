@@ -496,11 +496,11 @@ toData,16
 
 org/apache/geode/internal/admin/remote/ClientHealthStats,6
 fromData,73
-fromDataPre_GEODE_1_9_0_0,77
-fromDataPre_GFE_8_0_0_0,69
+fromDataPre_GFE_8_0_0_0,68
+fromDataPre_GEODE_1_9_0_0,14
 toData,73
-toDataPre_GEODE_1_9_0_0,77
-toDataPre_GFE_8_0_0_0,69
+toDataPre_GFE_8_0_0_0,68
+toDataPre_GEODE_1_9_0_0,14
 
 org/apache/geode/internal/admin/remote/CompactRequest,2
 fromData,6
@@ -897,9 +897,11 @@ org/apache/geode/internal/cache/DestroyOperation$DestroyWithContextMessage,2
 fromData,14
 toData,14
 
-org/apache/geode/internal/cache/DestroyPartitionedRegionMessage,2
-fromData,76
-toData,77
+org/apache/geode/internal/cache/DestroyPartitionedRegionMessage,4
+fromData,17
+fromDataPre_GEODE_1_9_0_0,76
+toData,14
+toDataPre_GEODE_1_9_0_0,77
 
 org/apache/geode/internal/cache/DestroyRegionOperation$DestroyRegionMessage,2
 fromData,41
@@ -1117,9 +1119,11 @@ org/apache/geode/internal/cache/InvalidateOperation$InvalidateWithContextMessage
 fromData,14
 toData,14
 
-org/apache/geode/internal/cache/InvalidatePartitionedRegionMessage,2
-fromData,14
+org/apache/geode/internal/cache/InvalidatePartitionedRegionMessage,4
+fromData,17
+fromDataPre_GEODE_1_9_0_0,14
 toData,14
+toDataPre_GEODE_1_9_0_0,14
 
 org/apache/geode/internal/cache/InvalidateRegionOperation$InvalidateRegionMessage,2
 fromData,17

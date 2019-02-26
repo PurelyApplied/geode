@@ -30,6 +30,8 @@ import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
@@ -74,7 +76,9 @@ import org.apache.geode.distributed.internal.DistributionConfig;
 import org.apache.geode.distributed.internal.membership.InternalDistributedMember;
 import org.apache.geode.internal.AvailablePort;
 import org.apache.geode.internal.OSProcess;
+import org.apache.geode.internal.cache.CachePerfStats;
 import org.apache.geode.internal.cache.CacheServerImpl;
+import org.apache.geode.internal.cache.GemFireCacheImpl;
 import org.apache.geode.internal.cache.LocalRegion;
 import org.apache.geode.internal.cache.ha.ThreadIdentifier;
 import org.apache.geode.internal.logging.LogService;
@@ -411,8 +415,36 @@ public class ClientServerMiscDUnitTestBase extends JUnit4CacheTestCase {
 
         // replace with null oldvalue matches invalidated entry
         pr.putIfAbsent("otherKeyForNull", null);
+        CachePerfStats stats = ((GemFireCacheImpl) pr.getCache()).getCachePerfStats();
+
+        Number puts = getNumPuts(stats);
         boolean success = pr.replace("otherKeyForNull", null, "no longer invalid");
         assertTrue(success);
+
+        Number newputs = getNumPuts(stats);
+        assertEquals("stats not updated properly or replace malfunctioned", newputs.longValue(),
+            puts.longValue() + 1);
+
+      }
+
+      public Number getNumPuts(CachePerfStats stats) {
+        Method getPutsMethod = null;
+        try {
+          getPutsMethod = stats.getClass().getMethod("getPuts");
+        } catch (NoSuchMethodException e) {
+          fail(e.getMessage());
+        }
+
+        Number puts = null;
+        try {
+          puts = (Number) getPutsMethod.invoke(stats);
+        } catch (IllegalAccessException e) {
+          fail(e.getMessage());
+        } catch (InvocationTargetException e) {
+          fail(e.getMessage());
+        }
+
+        return puts;
       }
     });
   }

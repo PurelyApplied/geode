@@ -30,6 +30,7 @@ import org.apache.logging.log4j.Logger;
 
 import org.apache.geode.CancelException;
 import org.apache.geode.SystemFailure;
+import org.apache.geode.annotations.internal.MakeNotStatic;
 import org.apache.geode.distributed.internal.membership.InternalDistributedMember;
 import org.apache.geode.internal.Version;
 import org.apache.geode.internal.cache.CacheClientStatus;
@@ -40,6 +41,7 @@ import org.apache.geode.internal.cache.TXManagerImpl;
 import org.apache.geode.internal.cache.tier.ServerSideHandshake;
 import org.apache.geode.internal.logging.LogService;
 import org.apache.geode.internal.logging.LoggingThread;
+import org.apache.geode.internal.util.JavaWorkarounds;
 
 /**
  * Class <code>ClientHealthMonitor</code> is a server-side singleton that monitors the health of
@@ -84,12 +86,14 @@ public class ClientHealthMonitor {
   /**
    * The singleton <code>CacheClientNotifier</code> instance
    */
+  @MakeNotStatic
   static ClientHealthMonitor _instance;
 
   /**
    * Reference count in the event that multiple cache servers are using the health monitor
    */
 
+  @MakeNotStatic
   private static int refCount = 0;
 
   /**
@@ -655,7 +659,8 @@ public class ClientHealthMonitor {
   }
 
   public ServerConnectionCollection getProxyIdCollection(ClientProxyMembershipID proxyID) {
-    return proxyIdConnections.computeIfAbsent(proxyID, key -> new ServerConnectionCollection());
+    return JavaWorkarounds.computeIfAbsent(proxyIdConnections, proxyID,
+        key -> new ServerConnectionCollection());
   }
 
   public Map<ClientProxyMembershipID, MutableInt> getCleanupProxyIdTable() {

@@ -39,9 +39,9 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.jetty.webapp.WebAppContext;
 
 import org.apache.geode.CancelException;
+import org.apache.geode.annotations.internal.MakeNotStatic;
 import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.GemFireCache;
 import org.apache.geode.cache.client.internal.locator.ClientConnectionRequest;
@@ -83,10 +83,10 @@ import org.apache.geode.internal.logging.NullLoggingSession;
 import org.apache.geode.internal.net.SocketCreator;
 import org.apache.geode.internal.net.SocketCreatorFactory;
 import org.apache.geode.internal.statistics.StatisticsConfig;
+import org.apache.geode.management.api.ClusterManagementService;
 import org.apache.geode.management.internal.AgentUtil;
 import org.apache.geode.management.internal.JmxManagerLocator;
 import org.apache.geode.management.internal.JmxManagerLocatorRequest;
-import org.apache.geode.management.internal.api.ClusterManagementService;
 import org.apache.geode.management.internal.api.LocatorClusterManagementService;
 import org.apache.geode.management.internal.configuration.domain.SharedConfigurationStatus;
 import org.apache.geode.management.internal.configuration.handlers.SharedConfigurationStatusRequestHandler;
@@ -197,7 +197,6 @@ public class InternalLocator extends Locator implements ConnectListener, LogConf
   private final LoggingSession loggingSession;
 
   private final Set<LogConfigListener> logConfigListeners = new HashSet<>();
-  private WebAppContext managementWebapp;
 
   public boolean isSharedConfigurationEnabled() {
     return this.config.getEnableClusterConfiguration();
@@ -217,6 +216,7 @@ public class InternalLocator extends Locator implements ConnectListener, LogConf
    *
    * GuardedBy must synchronize on locatorLock
    */
+  @MakeNotStatic
   private static InternalLocator locator;
 
   private static final Object locatorLock = new Object();
@@ -868,15 +868,6 @@ public class InternalLocator extends Locator implements ConnectListener, LogConf
       }
     }
 
-    // stop the managementwebapp
-    if (managementWebapp != null) {
-      try {
-        managementWebapp.stop();
-      } catch (Exception e) {
-        logger.error("unable to stop the management webapp.", e);
-      }
-    }
-
     removeLocator(this);
 
     handleShutdown();
@@ -950,7 +941,11 @@ public class InternalLocator extends Locator implements ConnectListener, LogConf
           Thread.sleep(5000);
         }
         logger.info("waiting for distributed system to reconnect...");
-        restarted = ds.waitUntilReconnected(-1, TimeUnit.SECONDS);
+        try {
+          restarted = ds.waitUntilReconnected(-1, TimeUnit.SECONDS);
+        } catch (CancelException e) {
+          // reconnect attempt failed
+        }
         if (restarted) {
           logger.info("system restarted");
         } else {
@@ -1047,7 +1042,12 @@ public class InternalLocator extends Locator implements ConnectListener, LogConf
           }
           this.stoppedForReconnect = false;
         }
-        restartWithDS(newSystem, GemFireCacheImpl.getInstance());
+        try {
+          restartWithDS(newSystem, GemFireCacheImpl.getInstance());
+        } catch (CancelException e) {
+          this.stoppedForReconnect = true;
+          return false;
+        }
         setLocator(this);
         restarted = true;
       }
@@ -1089,7 +1089,14 @@ public class InternalLocator extends Locator implements ConnectListener, LogConf
       this.myDs.setDependentLocator(this);
       logger.info("Locator restart: initializing TcpServer");
 
-      this.server.restarting(newSystem, newCache, this.configurationPersistenceService);
+      try {
+        this.server.restarting(newSystem, newCache, this.configurationPersistenceService);
+      } catch (CancelException e) {
+        this.myDs = null;
+        this.myCache = null;
+        logger.info("Locator restart: attempt to restart location services failed", e);
+        throw e;
+      }
       if (this.productUseLog.isClosed()) {
         this.productUseLog.reopen();
       }
@@ -1108,6 +1115,7 @@ public class InternalLocator extends Locator implements ConnectListener, LogConf
       endStartLocator(this.myDs);
       logger.info("Locator restart completed");
     }
+    this.server.restartCompleted(newSystem);
   }
 
   public ClusterManagementService getClusterManagementService() {
@@ -1256,6 +1264,15 @@ public class InternalLocator extends Locator implements ConnectListener, LogConf
       if (ds != null) {
         for (TcpHandler handler : this.allHandlers) {
           handler.restarting(ds, cache, sharedConfig);
+        }
+      }
+    }
+
+    @Override
+    public void restartCompleted(DistributedSystem ds) {
+      if (ds != null) {
+        for (TcpHandler handler : this.allHandlers) {
+          handler.restartCompleted(ds);
         }
       }
     }

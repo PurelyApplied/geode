@@ -38,9 +38,11 @@ import java.util.regex.Pattern;
 import org.apache.logging.log4j.Logger;
 
 import org.apache.geode.CancelException;
+import org.apache.geode.annotations.Immutable;
 import org.apache.geode.cache.RegionService;
 import org.apache.geode.distributed.internal.DistributionConfig;
 import org.apache.geode.internal.CopyOnWriteHashSet;
+import org.apache.geode.internal.PdxSerializerObject;
 import org.apache.geode.internal.logging.LogService;
 import org.apache.geode.internal.util.concurrent.CopyOnWriteWeakHashMap;
 import org.apache.geode.pdx.FieldType;
@@ -235,7 +237,9 @@ public class AutoSerializableManager {
     }
     String className = clazz.getName();
     if (isExcluded(className)) {
-      return false;
+      if (!PdxSerializerObject.class.isAssignableFrom(clazz)) {
+        return false;
+      }
     }
 
     for (Pattern p : classPatterns) {
@@ -652,6 +656,7 @@ public class AutoSerializableManager {
 
   // unsafe will be null if the Unsafe class is not available or SAFE was requested.
   // We attempt to use Unsafe by default for best performance.
+  @Immutable
   private static final UnsafeWrapper unsafe;
   static {
     UnsafeWrapper tmp = null;

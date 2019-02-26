@@ -46,7 +46,10 @@ import javax.net.ssl.SSLException;
 import org.apache.logging.log4j.Logger;
 
 import org.apache.geode.CancelException;
+import org.apache.geode.SerializationException;
 import org.apache.geode.SystemFailure;
+import org.apache.geode.annotations.internal.MakeNotStatic;
+import org.apache.geode.annotations.internal.MutableForTesting;
 import org.apache.geode.cache.CacheClosedException;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.distributed.DistributedSystemDisconnectedException;
@@ -92,7 +95,9 @@ public class Connection implements Runnable {
   private static final Logger logger = LogService.getLogger();
   public static final String THREAD_KIND_IDENTIFIER = "P2P message reader";
 
+  @MakeNotStatic
   private static int P2P_CONNECT_TIMEOUT;
+  @MakeNotStatic
   private static boolean IS_P2P_CONNECT_TIMEOUT_INITIALIZED = false;
 
   static final int NORMAL_MSG_TYPE = 0x4c;
@@ -113,6 +118,7 @@ public class Connection implements Runnable {
       Integer.getInteger(DistributionConfig.GEMFIRE_PREFIX + "SMALL_BUFFER_SIZE", 4096);
 
   /** counter to give connections a unique id */
+  @MakeNotStatic
   private static final AtomicLong idCounter = new AtomicLong(1);
 
   /** string used as the reason for initiating suspect processing */
@@ -571,6 +577,7 @@ public class Connection implements Runnable {
     return isIdle;
   }
 
+  @MakeNotStatic
   private static final ByteBuffer okHandshakeBuf;
   static {
     int msglen = 1; // one byte for reply code
@@ -771,8 +778,6 @@ public class Connection implements Runnable {
 
     // we do the close in a background thread because the operation may hang if
     // there is a problem with the network. See bug #46659
-
-    releaseInputBuffer();
 
     // if simulating sickness, sockets must be closed in-line so that tests know
     // that the vm is sick when the beSick operation completes
@@ -1441,6 +1446,11 @@ public class Connection implements Runnable {
         }
         // make sure our socket is closed
         asyncClose(false);
+        if (!this.isReceiver) {
+          // receivers release the input buffer when exiting run(). Senders use the
+          // inputBuffer for reading direct-reply responses
+          releaseInputBuffer();
+        }
         lengthSet = false;
       } // synchronized
 
@@ -1578,11 +1588,14 @@ public class Connection implements Runnable {
         }
         asyncClose(false);
         this.owner.removeAndCloseThreadOwnedSockets();
-
-        if (this.isSharedResource()) {
-          releaseInputBuffer();
+      } else {
+        if (getConduit().useSSL()) {
+          ByteBuffer buffer = ioFilter.getUnwrappedBuffer(inputBuffer);
+          buffer.position(0).limit(0);
         }
       }
+      releaseInputBuffer();
+
       // make sure that if the reader thread exits we notify a thread waiting
       // for the handshake.
       // see bug 37524 for an example of listeners hung in waitForHandshake
@@ -2561,6 +2574,7 @@ public class Connection implements Runnable {
   /**
    * If true then act as if the socket buffer is full and start async queuing
    */
+  @MutableForTesting
   public static volatile boolean FORCE_ASYNC_QUEUE = false;
 
   private static final int MAX_WAIT_TIME = (1 << 5); // ms (must be a power of 2)
@@ -2824,11 +2838,11 @@ public class Connection implements Runnable {
     DMStats stats = owner.getConduit().getStats();
     final Version version = getRemoteVersion();
     try {
-      msgReader = new MsgReader(this, ioFilter, getInputBuffer(), version);
+      msgReader = new MsgReader(this, ioFilter, version);
 
       Header header = msgReader.readHeader();
 
-      ReplyMessage msg;
+      ReplyMessage msg = null;
       int len;
       if (header.getMessageType() == NORMAL_MSG_TYPE) {
         msg = (ReplyMessage) msgReader.readMessage(header);
@@ -2899,6 +2913,9 @@ public class Connection implements Runnable {
             getRemoteAddress());
         this.ackTimedOut = false;
       }
+      if (msgReader != null) {
+        msgReader.close();
+      }
     }
     synchronized (stateLock) {
       this.connectionState = STATE_RECEIVED_ACK;
@@ -2938,8 +2955,12 @@ public class Connection implements Runnable {
           peerDataBuffer.limit(startPos + messageLength);
 
           if (this.handshakeRead) {
-            readMessage(peerDataBuffer);
-
+            try {
+              readMessage(peerDataBuffer);
+            } catch (SerializationException e) {
+              logger.info("input buffer startPos {} oldLimit {}", startPos, oldLimit);
+              throw e;
+            }
           } else {
             ByteBufferInputStream bbis = new ByteBufferInputStream(peerDataBuffer);
             DataInputStream dis = new DataInputStream(bbis);
@@ -3124,7 +3145,16 @@ public class Connection implements Runnable {
         ReplyProcessor21.initMessageRPId();
         // add serialization stats
         long startSer = this.owner.getConduit().getStats().startMsgDeserialization();
-        msg = (DistributionMessage) InternalDataSerializer.readDSFID(bbis);
+        int startingPosition = peerDataBuffer.position();
+        try {
+          msg = (DistributionMessage) InternalDataSerializer.readDSFID(bbis);
+        } catch (SerializationException e) {
+          logger.info("input buffer starting position {} "
+              + " current position {} limit {} capacity {} message length {}",
+              startingPosition, peerDataBuffer.position(), peerDataBuffer.limit(),
+              peerDataBuffer.capacity(), messageLength);
+          throw e;
+        }
         this.owner.getConduit().getStats().endMsgDeserialization(startSer);
         if (bbis.available() != 0) {
           logger.warn("Message deserialization of {} did not read {} bytes.",

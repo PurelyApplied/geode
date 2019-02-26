@@ -49,6 +49,7 @@ import org.apache.geode.DataSerializer;
 import org.apache.geode.Instantiator;
 import org.apache.geode.InternalGemFireError;
 import org.apache.geode.StatisticsFactory;
+import org.apache.geode.annotations.internal.MakeNotStatic;
 import org.apache.geode.cache.CacheEvent;
 import org.apache.geode.cache.CacheException;
 import org.apache.geode.cache.InterestRegistrationEvent;
@@ -121,6 +122,7 @@ import org.apache.geode.security.AuthenticationRequiredException;
 public class CacheClientNotifier {
   private static final Logger logger = LogService.getLogger();
 
+  @MakeNotStatic
   private static volatile CacheClientNotifier ccnSingleton;
 
   /**
@@ -211,7 +213,7 @@ public class CacheClientNotifier {
       if (clientVersion.compareTo(Version.GFE_6516) >= 0) {
         DataSerializer.writeHashMap(dsToSupportedClasses, dos);
       }
-      if (clientVersion.compareTo(Version.GEODE_150) >= 0) {
+      if (clientVersion.compareTo(Version.GEODE_1_5_0) >= 0) {
         dos.writeInt(CLIENT_PING_TASK_PERIOD);
       }
     }
@@ -2133,6 +2135,7 @@ public class CacheClientNotifier {
    * then enque the event possibly causing the queue to grow beyond its capacity/max-size. See
    * #51400.
    */
+  @MakeNotStatic
   public static int eventEnqueueWaitTime;
 
   /**

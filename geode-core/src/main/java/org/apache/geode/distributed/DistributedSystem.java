@@ -32,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.geode.CancelCriterion;
 import org.apache.geode.LogWriter;
 import org.apache.geode.StatisticsFactory;
+import org.apache.geode.annotations.internal.MakeNotStatic;
 import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.client.ClientCache;
@@ -88,6 +89,7 @@ public abstract class DistributedSystem implements StatisticsFactory {
    * to a distributed system is allowed in a VM. This set is never modified in place (it is always
    * read only) but the reference can be updated by holders of {@link #existingSystemsLock}.
    */
+  @MakeNotStatic
   protected static volatile List<InternalDistributedSystem> existingSystems =
       Collections.EMPTY_LIST;
   /**
@@ -648,6 +650,8 @@ public abstract class DistributedSystem implements StatisticsFactory {
 
   /**
    * Wait for the DistributedSystem to finish reconnecting to the system and recreate the cache.
+   * This may throw a DistributedSystemDisconnectedException if reconnect fails. The exception
+   * will detail what went wrong.
    *
    * @param time amount of time to wait, or -1 to wait forever
    * @return true if the system was reconnected

@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -70,6 +71,7 @@ import org.apache.geode.GemFireConfigException;
 import org.apache.geode.GemFireIOException;
 import org.apache.geode.InternalGemFireError;
 import org.apache.geode.SystemConnectException;
+import org.apache.geode.annotations.internal.MutableForTesting;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.distributed.DistributedSystemDisconnectedException;
 import org.apache.geode.distributed.DurableClientAttributes;
@@ -85,6 +87,7 @@ import org.apache.geode.distributed.internal.membership.NetView;
 import org.apache.geode.distributed.internal.membership.QuorumChecker;
 import org.apache.geode.distributed.internal.membership.gms.GMSMember;
 import org.apache.geode.distributed.internal.membership.gms.Services;
+import org.apache.geode.distributed.internal.membership.gms.interfaces.HealthMonitor;
 import org.apache.geode.distributed.internal.membership.gms.interfaces.MessageHandler;
 import org.apache.geode.distributed.internal.membership.gms.interfaces.Messenger;
 import org.apache.geode.distributed.internal.membership.gms.locator.FindCoordinatorRequest;
@@ -125,6 +128,7 @@ public class JGroupsMessenger implements Messenger {
   private static final short JGROUPS_TYPE_JGADDRESS = 2000;
   private static final short JGROUPS_PROTOCOL_TRANSPORT = 1000;
 
+  @MutableForTesting
   public static boolean THROW_EXCEPTION_ON_START_HOOK;
 
   protected String jgStackConfig;
@@ -170,6 +174,19 @@ public class JGroupsMessenger implements Messenger {
    * or in a past one & retained through an auto-reconnect.
    */
   private Set<DistributedMember> usedDistributedMemberIdentifiers = new HashSet<>();
+
+  /**
+   * During reconnect a QuorumChecker holds the JGroups channel and responds to Ping
+   * and Pong messages but also queues any messages it doesn't recognize. These need
+   * to be delivered to handlers after membership services have been rebuilt.
+   */
+  private Queue<Message> queuedMessagesFromReconnect;
+
+  /**
+   * The JGroupsReceiver is handed messages by the JGroups Channel. It is responsible
+   * for deserializating and dispatching those messages to the appropriate handler
+   */
+  private JGroupsReceiver jgroupsReceiver;
 
   @Override
   @edu.umd.cs.findbugs.annotations.SuppressWarnings(
@@ -307,6 +324,7 @@ public class JGroupsMessenger implements Messenger {
         MembershipInformation oldInfo = (MembershipInformation) oldDSMembershipInfo;
         myChannel = oldInfo.getChannel();
         usedDistributedMemberIdentifiers = oldInfo.getMembershipIdentifiers();
+        queuedMessagesFromReconnect = oldInfo.getQueuedMessages();
 
         // scrub the old channel
         ViewId vid = new ViewId(new JGAddress(), 0);
@@ -314,9 +332,16 @@ public class JGroupsMessenger implements Messenger {
         members.add(new UUID(0, 0));// TODO open a JGroups JIRA for GEODE-3034
         View jgv = new View(vid, members);
         this.myChannel.down(new Event(Event.VIEW_CHANGE, jgv));
-        UUID logicalAddress = (UUID) myChannel.getAddress();
-        if (logicalAddress instanceof JGAddress) {
-          ((JGAddress) logicalAddress).setVmViewId(-1);
+        // attempt to establish a new UUID in the jgroups channel so the member address will be
+        // different
+        try {
+          Method setAddressMethod = JChannel.class.getDeclaredMethod("setAddress");
+          setAddressMethod.setAccessible(true);
+          setAddressMethod.invoke(myChannel);
+        } catch (SecurityException | NoSuchMethodException e) {
+          logger.warn("Unable to establish a new JGroups address.  "
+              + "My address will be exactly the same as last time. Exception={}",
+              e.getMessage());
         }
         reconnecting = true;
       } else {
@@ -343,9 +368,10 @@ public class JGroupsMessenger implements Messenger {
 
     try {
       myChannel.setReceiver(null);
-      myChannel.setReceiver(new JGroupsReceiver());
+      jgroupsReceiver = new JGroupsReceiver();
+      myChannel.setReceiver(jgroupsReceiver);
       if (!reconnecting) {
-        myChannel.connect("AG"); // apache g***** (whatever we end up calling it)
+        myChannel.connect("AG"); // Apache Geode
       }
     } catch (Exception e) {
       myChannel.close();
@@ -385,7 +411,17 @@ public class JGroupsMessenger implements Messenger {
   }
 
   @Override
-  public void started() {}
+  public void started() {
+    if (queuedMessagesFromReconnect != null) {
+      logger.info("Delivering {} messages queued by quorum checker",
+          queuedMessagesFromReconnect.size());
+      for (Message message : queuedMessagesFromReconnect) {
+        jgroupsReceiver.receive(message, true);
+      }
+      queuedMessagesFromReconnect.clear();
+      queuedMessagesFromReconnect = null;
+    }
+  }
 
   @Override
   public void stop() {
@@ -527,6 +563,8 @@ public class JGroupsMessenger implements Messenger {
     gmsMember.setMemberWeight((byte) (services.getConfig().getMemberWeight() & 0xff));
     gmsMember.setNetworkPartitionDetectionEnabled(
         services.getConfig().getDistributionConfig().getEnableNetworkPartitionDetection());
+    logger.info("Established local address {}", localAddress);
+    services.setLocalAddress(localAddress);
   }
 
   @Override
@@ -1224,6 +1262,10 @@ public class JGroupsMessenger implements Messenger {
 
     @Override
     public void receive(Message jgmsg) {
+      receive(jgmsg, false);
+    }
+
+    private void receive(Message jgmsg, boolean fromQuorumChecker) {
       long startTime = DistributionStats.getStatTime();
       try {
         if (services.getManager().shutdownInProgress()) {
@@ -1277,7 +1319,13 @@ public class JGroupsMessenger implements Messenger {
             logger.trace("JGroupsMessenger dispatching {} from {}", msg, msg.getSender());
           }
           filterIncomingMessage(msg);
-          getMessageHandler(msg).processMessage(msg);
+          MessageHandler handler = getMessageHandler(msg);
+          if (fromQuorumChecker && handler instanceof HealthMonitor) {
+            // ignore suspect / heartbeat messages that happened during
+            // auto-reconnect because they very likely have old member IDs in them
+          } else {
+            handler.processMessage(msg);
+          }
 
           // record the scheduling of broadcast messages
           NakAckHeader2 header = (NakAckHeader2) jgmsg.getHeader(nackack2HeaderId);

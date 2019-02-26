@@ -44,8 +44,7 @@ import org.apache.geode.cache.configuration.RegionConfig;
 @WebAppConfiguration
 public class RegionManagementIntegrationTest {
 
-  static RequestPostProcessor POST_PROCESSOR =
-      new StandardRequestPostProcessor();
+  static RequestPostProcessor POST_PROCESSOR = new StandardRequestPostProcessor();
 
   @Autowired
   private WebApplicationContext webApplicationContext;
@@ -72,7 +71,7 @@ public class RegionManagementIntegrationTest {
         .with(POST_PROCESSOR)
         .content(json))
         .andExpect(status().isInternalServerError())
-        .andExpect(jsonPath("$.persistenceStatus.status", is("FAILURE")))
+        .andExpect(jsonPath("$.persistenceStatus.success", is(false)))
         .andExpect(jsonPath("$.persistenceStatus.message",
             is("no members found to create cache element")));
   }

@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 
+import org.apache.geode.annotations.Immutable;
 import org.apache.geode.cache.CacheClosedException;
 import org.apache.geode.cache.execute.ResultCollector;
 import org.apache.geode.distributed.DistributedMember;
@@ -39,6 +40,7 @@ import org.apache.geode.management.internal.security.ResourceOperation;
 import org.apache.geode.security.ResourcePermission;
 
 public class DescribeMemberCommand extends InternalGfshCommand {
+  @Immutable
   private static final GetMemberInformationFunction getMemberInformation =
       new GetMemberInformationFunction();
 
@@ -63,11 +65,6 @@ public class DescribeMemberCommand extends InternalGfshCommand {
         CompositeResultData crd = ResultBuilder.createCompositeResultData();
 
         MemberInformation memberInformation = (MemberInformation) obj;
-        memberInformation.setName(memberToBeDescribed.getName());
-        memberInformation.setId(memberToBeDescribed.getId());
-        memberInformation.setHost(memberToBeDescribed.getHost());
-        memberInformation.setProcessId("" + memberToBeDescribed.getProcessId());
-
         CompositeResultData.SectionResultData section = crd.addSection();
         section.addData("Name", memberInformation.getName());
         section.addData("Id", memberInformation.getId());

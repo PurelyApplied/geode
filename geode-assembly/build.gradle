@@ -21,6 +21,10 @@ import org.apache.geode.gradle.plugins.DependencyConstraints
 apply plugin: 'distribution'
 apply plugin: 'maven-publish'
 
+// This subproject's 'publication' is not a jar and should not be constrained to match versions
+// in the geode-all-bom.
+project.ext.set('constrainVersionInBom', false)
+
 project.ext {artifactName = 'apache-geode'}
 
 configurations {

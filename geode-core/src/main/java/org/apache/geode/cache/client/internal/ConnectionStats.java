@@ -19,6 +19,7 @@ import org.apache.geode.Statistics;
 import org.apache.geode.StatisticsFactory;
 import org.apache.geode.StatisticsType;
 import org.apache.geode.StatisticsTypeFactory;
+import org.apache.geode.annotations.Immutable;
 import org.apache.geode.distributed.internal.DistributionStats;
 import org.apache.geode.internal.cache.PoolStats;
 import org.apache.geode.internal.cache.tier.sockets.MessageStats;
@@ -31,7 +32,9 @@ import org.apache.geode.internal.statistics.StatisticsTypeFactoryImpl;
  */
 public class ConnectionStats implements MessageStats {
   // static fields
+  @Immutable
   private static final StatisticsType type;
+  @Immutable
   private static final StatisticsType sendType;
 
   ///////////////////////////////////////////////////////////////////////
@@ -439,6 +442,7 @@ public class ConnectionStats implements MessageStats {
   // An array of all of the ids that represent operation statistics. This
   // is used by the getOps method to aggregate the individual stats
   // into a total value for all operations.
+  @Immutable
   private static final int[] opIds;
 
   static {
@@ -458,28 +462,28 @@ public class ConnectionStats implements MessageStats {
                */
               ///////////////////////////////////////////////////////////////////////
               f.createIntGauge("getsInProgress", "Current number of gets being executed", "gets"),
-              f.createIntCounter("gets", "Total number of gets completed successfully", "gets"),
-              f.createIntCounter("getFailures", "Total number of get attempts that have failed",
+              f.createLongCounter("gets", "Total number of gets completed successfully", "gets"),
+              f.createLongCounter("getFailures", "Total number of get attempts that have failed",
                   "gets"),
-              f.createIntCounter("getTimeouts", "Total number of get attempts that have timed out",
+              f.createLongCounter("getTimeouts", "Total number of get attempts that have timed out",
                   "gets"),
               f.createLongCounter("getTime",
                   "Total amount of time, in nanoseconds spent doing gets", "nanoseconds"),
               f.createIntGauge("putsInProgress", "Current number of puts being executed", "puts"),
-              f.createIntCounter("puts", "Total number of puts completed successfully", "puts"),
-              f.createIntCounter("putFailures", "Total number of put attempts that have failed",
+              f.createLongCounter("puts", "Total number of puts completed successfully", "puts"),
+              f.createLongCounter("putFailures", "Total number of put attempts that have failed",
                   "puts"),
-              f.createIntCounter("putTimeouts", "Total number of put attempts that have timed out",
+              f.createLongCounter("putTimeouts", "Total number of put attempts that have timed out",
                   "puts"),
               f.createLongCounter("putTime",
                   "Total amount of time, in nanoseconds spent doing puts", "nanoseconds"),
               f.createIntGauge("destroysInProgress", "Current number of destroys being executed",
                   "destroys"),
-              f.createIntCounter("destroys", "Total number of destroys completed successfully",
+              f.createLongCounter("destroys", "Total number of destroys completed successfully",
                   "destroys"),
-              f.createIntCounter("destroyFailures",
+              f.createLongCounter("destroyFailures",
                   "Total number of destroy attempts that have failed", "destroys"),
-              f.createIntCounter("destroyTimeouts",
+              f.createLongCounter("destroyTimeouts",
                   "Total number of destroy attempts that have timed out", "destroys"),
               f.createLongCounter("destroyTime",
                   "Total amount of time, in nanoseconds spent doing destroys", "nanoseconds"),
@@ -495,11 +499,12 @@ public class ConnectionStats implements MessageStats {
                   "Total amount of time, in nanoseconds spent doing destroyRegions", "nanoseconds"),
               f.createIntGauge("clearsInProgress", "Current number of clears being executed",
                   "clears"),
-              f.createIntCounter("clears", "Total number of clears completed successfully",
+              f.createLongCounter("clears", "Total number of clears completed successfully",
                   "clears"),
-              f.createIntCounter("clearFailures", "Total number of clear attempts that have failed",
+              f.createLongCounter("clearFailures",
+                  "Total number of clear attempts that have failed",
                   "clears"),
-              f.createIntCounter("clearTimeouts",
+              f.createLongCounter("clearTimeouts",
                   "Total number of clear attempts that have timed out", "clears"),
               f.createLongCounter("clearTime",
                   "Total amount of time, in nanoseconds spent doing clears", "nanoseconds"),
@@ -596,11 +601,11 @@ public class ConnectionStats implements MessageStats {
 
               f.createIntGauge("invalidatesInProgress",
                   "Current number of invalidates being executed", "invalidates"),
-              f.createIntCounter("invalidates",
+              f.createLongCounter("invalidates",
                   "Total number of invalidates completed successfully", "invalidates"),
-              f.createIntCounter("invalidateFailures",
+              f.createLongCounter("invalidateFailures",
                   "Total number of invalidate attempts that have failed", "invalidates"),
-              f.createIntCounter("invalidateTimeouts",
+              f.createLongCounter("invalidateTimeouts",
                   "Total number of invalidate attempts that have timed out", "invalidates"),
               f.createLongCounter("invalidateTime",
                   "Total amount of time, in nanoseconds spent doing invalidates", "nanoseconds"),
@@ -1772,7 +1777,7 @@ public class ConnectionStats implements MessageStats {
     } else {
       endGetId = getId;
     }
-    this.stats.incInt(endGetId, 1);
+    this.stats.incLong(endGetId, 1L);
     this.stats.incLong(getDurationId, duration);
   }
 
@@ -1838,7 +1843,7 @@ public class ConnectionStats implements MessageStats {
     } else {
       endPutId = putId;
     }
-    this.stats.incInt(endPutId, 1);
+    this.stats.incLong(endPutId, 1L);
     this.stats.incLong(putDurationId, duration);
   }
 
@@ -1904,7 +1909,7 @@ public class ConnectionStats implements MessageStats {
     } else {
       endDestroyId = destroyId;
     }
-    this.stats.incInt(endDestroyId, 1);
+    this.stats.incLong(endDestroyId, 1);
     this.stats.incLong(destroyDurationId, duration);
   }
 
@@ -2020,7 +2025,7 @@ public class ConnectionStats implements MessageStats {
     } else {
       endClearId = clearId;
     }
-    this.stats.incInt(endClearId, 1);
+    this.stats.incLong(endClearId, 1L);
     this.stats.incLong(clearDurationId, duration);
   }
 
@@ -3595,7 +3600,7 @@ public class ConnectionStats implements MessageStats {
     } else {
       endInvalidateId = invalidateId;
     }
-    this.stats.incInt(endInvalidateId, 1);
+    this.stats.incLong(endInvalidateId, 1L);
     this.stats.incLong(invalidateDurationId, duration);
   }
 

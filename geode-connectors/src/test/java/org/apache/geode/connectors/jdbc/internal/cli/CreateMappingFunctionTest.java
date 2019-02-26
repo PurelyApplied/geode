@@ -15,7 +15,6 @@
 package org.apache.geode.connectors.jdbc.internal.cli;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
@@ -44,6 +43,7 @@ import org.apache.geode.cache.execute.ResultSender;
 import org.apache.geode.connectors.jdbc.internal.JdbcConnectorService;
 import org.apache.geode.connectors.jdbc.internal.RegionMappingExistsException;
 import org.apache.geode.connectors.jdbc.internal.configuration.RegionMapping;
+import org.apache.geode.connectors.util.internal.MappingCommandUtils;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.distributed.DistributedSystem;
 import org.apache.geode.internal.cache.InternalCache;
@@ -139,9 +139,10 @@ public class CreateMappingFunctionTest {
     }).when(service)
         .createRegionMapping(eq(regionMapping));
 
-    assertThatThrownBy(() -> function.createRegionMapping(service, regionMapping))
-        .isInstanceOf(RegionMappingExistsException.class);
+    Throwable throwable =
+        catchThrowable(() -> function.createRegionMapping(service, regionMapping));
 
+    assertThat(throwable).isInstanceOf(RegionMappingExistsException.class);
     verify(service, times(1)).createRegionMapping(regionMapping);
   }
 
@@ -199,7 +200,7 @@ public class CreateMappingFunctionTest {
 
   @Test
   public void executeAlterRegionAsyncEventQueue() throws Exception {
-    String queueName = CreateMappingCommand.createAsyncEventQueueName(REGION_NAME);
+    String queueName = MappingCommandUtils.createAsyncEventQueueName(REGION_NAME);
     function.executeFunction(context);
 
     verify(service, times(1)).createRegionMapping(regionMapping);

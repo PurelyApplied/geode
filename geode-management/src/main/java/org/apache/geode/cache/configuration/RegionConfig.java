@@ -30,6 +30,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
 import org.apache.geode.annotations.Experimental;
+import org.apache.geode.management.api.RestfulEndpoint;
 
 
 /**
@@ -149,7 +150,7 @@ import org.apache.geode.annotations.Experimental;
 @XmlType(name = "region-type", namespace = "http://geode.apache.org/schema/cache",
     propOrder = {"regionAttributes", "indexes", "entries", "regionElements", "regions"})
 @Experimental
-public class RegionConfig implements CacheElement {
+public class RegionConfig implements CacheElement, RestfulEndpoint {
   @XmlElement(name = "region-attributes", namespace = "http://geode.apache.org/schema/cache")
   protected RegionAttributesType regionAttributes;
   @XmlElement(name = "index", namespace = "http://geode.apache.org/schema/cache")
@@ -170,6 +171,11 @@ public class RegionConfig implements CacheElement {
   public RegionConfig(String name, String refid) {
     this.name = name;
     this.type = refid;
+  }
+
+  @Override
+  public String getEndpoint() {
+    return "/v2/regions";
   }
 
   public RegionAttributesType getRegionAttributes() {
@@ -446,6 +452,7 @@ public class RegionConfig implements CacheElement {
         break;
       }
       case "LOCAL": {
+        regionAttributes.setDataPolicy(RegionAttributesDataPolicy.NORMAL);
         regionAttributes.setScope(RegionAttributesScope.LOCAL);
         break;
       }
@@ -455,11 +462,13 @@ public class RegionConfig implements CacheElement {
         break;
       }
       case "LOCAL_HEAP_LRU": {
+        regionAttributes.setDataPolicy(RegionAttributesDataPolicy.NORMAL);
         regionAttributes.setScope(RegionAttributesScope.LOCAL);
         regionAttributes.setLruHeapPercentage(EnumActionDestroyOverflow.LOCAL_DESTROY);
         break;
       }
       case "LOCAL_OVERFLOW": {
+        regionAttributes.setDataPolicy(RegionAttributesDataPolicy.NORMAL);
         regionAttributes.setScope(RegionAttributesScope.LOCAL);
         regionAttributes.setLruHeapPercentage(EnumActionDestroyOverflow.OVERFLOW_TO_DISK);
         break;

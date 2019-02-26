@@ -30,6 +30,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.apache.logging.log4j.Logger;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -74,6 +75,11 @@ public class PartitionedRegionSingleNodeOperationsJUnitTest {
     logWriter = PartitionedRegionTestHelper.getLogger();
   }
 
+  @After
+  public void tearDown() {
+    PartitionedRegionTestHelper.closeCache();
+  }
+
   /**
    * This isa test for PartitionedRegion put() operation.
    * <p>
@@ -102,7 +108,8 @@ public class PartitionedRegionSingleNodeOperationsJUnitTest {
     logger.info("<ExpectedException action=add>" + expectedExceptions + "</ExpectedException>");
     try {
       pr.put(new Integer(1), val);
-      fail("testPut()- Expected PartitionedRegionException not thrown for localMaxMemory = 0");
+      fail(
+          "testPut()- The expected PartitionedRegionException was not thrown for localMaxMemory = 0");
     } catch (PartitionedRegionStorageException ex) {
       if (logWriter.fineEnabled()) {
         logWriter.fine(
@@ -229,11 +236,11 @@ public class PartitionedRegionSingleNodeOperationsJUnitTest {
   }
 
   private long getDestroyCount(PartitionedRegion pr) {
-    return pr.getCache().getCachePerfStats().getDestroys();
+    return ((GemFireCacheImpl) pr.getCache()).getCachePerfStats().getDestroys();
   }
 
   private long getCreateCount(PartitionedRegion pr) {
-    return pr.getCache().getCachePerfStats().getCreates();
+    return ((GemFireCacheImpl) pr.getCache()).getCachePerfStats().getCreates();
   }
 
   /**
