@@ -29,7 +29,7 @@ project.ext {artifactName = 'apache-geode'}
 
 configurations {
   compositeTarget
-  gfshDependencies.extendsFrom compile  // extend from compile for version management to apply
+  gfshDependencies
 
   // Configurations used to download and cache web application servers for session module testing
   webServerTomcat6
@@ -359,10 +359,6 @@ repositories {
     }
   }
 }
-
-configurations {
-  gfshDependencies
-
 
 def webServersDir = "$buildDir/generated-resources/webservers"
 
