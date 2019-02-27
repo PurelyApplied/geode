@@ -22,6 +22,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
 // The published bom will constrain versions within geode of any subproject with this property set.
+// This is normally set in publish.gradle, but since we do not consume that file, we opt in directly.
 project.ext.set('constrainVersionInBom', true)
 
 if (project.name != 'geode-assembly') {

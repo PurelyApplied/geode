@@ -360,6 +360,8 @@ repositories {
   }
 }
 
+configurations {
+  gfshDependencies
 
 
 def webServersDir = "$buildDir/generated-resources/webservers"
@@ -381,6 +383,7 @@ task downloadWebServers(type:Copy) {
 
 dependencies {
   compile(platform(project(':boms:geode-all-bom')))
+  gfshDependencies(platform(project(':boms:geode-all-bom')))
 
   geodeArchives project(':geode-common')
   geodeArchives project(':geode-connectors')
