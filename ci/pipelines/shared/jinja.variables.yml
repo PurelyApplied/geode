@@ -18,27 +18,30 @@
 repository:
   project: geode
 
-build_test:
-  name: "Build"
+test_configuration_base:  &default_test_configuration
+  name: "Override this."
   CPUS: "8"
   RAM: "16"
-  ARTIFACT_SLUG: build
+  ARTIFACT_SLUG: "Override this."
+  # TODO: CallStack timeout is 30 minutes in many places, but execute_test timeout is 10?
   CALL_STACK_TIMEOUT: "1800"
   PARALLEL_DUNIT: "false"
   DUNIT_PARALLEL_FORKS: "4"
+  GRADLE_TASK: "OverrideThis"
+  PARALLEL_GRADLE: "false"
+  execute_test_timeout: 10m
+
+build_test:
+  <<: *default_test_configuration
+  name: "Build"
+  ARTIFACT_SLUG: build
   # Actual gradle task is quite a bit more than "build" but is hard-coded in execute_build.sh
   # It's consumption is more like a "TEST_RESULTS_DESTINATIONS_DIRECTORY_STUB_THING.
   GRADLE_TASK: build
-  PARALLEL_GRADLE: "false"
-  execute_test_timeout: 10m
 examples_test:
+  <<: *default_test_configuration
   name: "TestExamples"
-  CPUS: "8"
-  RAM: "16"
   ARTIFACT_SLUG: examples
-  CALL_STACK_TIMEOUT: "1800"
-  PARALLEL_DUNIT: "false"
-  DUNIT_PARALLEL_FORKS: "4"
   # Actual gradle task is "clean runAll" but is hard-coded in execute_build_examples.sh
   # It's consumption is more like a "TEST_RESULTS_DESTINATIONS_DIRECTORY_STUB_THING.
   GRADLE_TASK: runAll
@@ -64,27 +67,22 @@ java_build_version:
   version: 8
 
 tests:
-- name: "Unit"
-  CPUS: "8"
-  RAM: "16"
+- <<: *default_test_configuration
+  name: "Unit"
   ARTIFACT_SLUG: unittestfiles
-  CALL_STACK_TIMEOUT: "1800"
   DUNIT_PARALLEL_FORKS: "0"
   GRADLE_TASK: test
-  execute_test_timeout: 10m
-  PARALLEL_DUNIT: "false"
   PARALLEL_GRADLE: "true"
-- name: "Acceptance"
+- <<: *default_test_configuration
+  name: "Acceptance"
   CPUS: "8"
   RAM: "12"
   ARTIFACT_SLUG: acceptancetestfiles
-  CALL_STACK_TIMEOUT: "1800"
   DUNIT_PARALLEL_FORKS: "0"
   GRADLE_TASK: acceptanceTest
   execute_test_timeout: 45m
-  PARALLEL_DUNIT: "false"
-  PARALLEL_GRADLE: "false"
-- name: "Distributed"
+- <<: *default_test_configuration
+  name: "Distributed"
   CPUS: "96"
   RAM: "180"
   ARTIFACT_SLUG: distributedtestfiles
@@ -93,7 +91,8 @@ tests:
   GRADLE_TASK: distributedTest
   execute_test_timeout: 2h15m
   PARALLEL_DUNIT: "true"
-- name: "Integration"
+- <<: *default_test_configuration
+  name: "Integration"
   CPUS: "96"
   RAM: "90"
   ARTIFACT_SLUG: integrationtestfiles
@@ -102,7 +101,8 @@ tests:
   GRADLE_TASK: integrationTest
   execute_test_timeout: 40m
   PARALLEL_DUNIT: "true"
-- name: "Upgrade"
+- <<: *default_test_configuration
+  name: "Upgrade"
   CPUS: "96"
   RAM: "160"
   ARTIFACT_SLUG: upgradetestfiles
@@ -111,7 +111,8 @@ tests:
   GRADLE_TASK: upgradeTest
   execute_test_timeout: 1h
   PARALLEL_DUNIT: "true"
-- name: "StressNew"
+- <<: *default_test_configuration
+  name: "StressNew"
   CPUS: "96"
   RAM: "210"
   ARTIFACT_SLUG: stressnewtestfiles
@@ -120,16 +121,16 @@ tests:
   GRADLE_TASK: repeatTest
   execute_test_timeout: 2h15m
   PARALLEL_DUNIT: "true"
-- name: "WindowsAcceptance"
+- <<: *default_test_configuration
+  name: "WindowsAcceptance"
   CPUS: "16"
   RAM: "64"
   ARTIFACT_SLUG: windows-acceptancetestfiles
   DUNIT_PARALLEL_FORKS: "0"
   GRADLE_TASK: :geode-assembly:acceptanceTest
   execute_test_timeout: 6h
-  PARALLEL_DUNIT: "false"
-  PARALLEL_GRADLE: "false"
-- name: "WindowsGfshDistributed"
+- <<: *default_test_configuration
+  name: "WindowsGfshDistributed"
   CPUS: "16"
   RAM: "64"
   ARTIFACT_SLUG: windows-gfshdistributedtest
@@ -139,7 +140,8 @@ tests:
   execute_test_timeout: 6h
   PARALLEL_DUNIT: "false"
   PARALLEL_GRADLE: "false"
-- name: "WindowsIntegration"
+- <<: *default_test_configuration
+  name: "WindowsIntegration"
   CPUS: "16"
   RAM: "64"
   ARTIFACT_SLUG: windows-integrationtestfiles
@@ -148,7 +150,8 @@ tests:
   execute_test_timeout: 6h
   PARALLEL_DUNIT: "false"
   PARALLEL_GRADLE: "false"
-- name: "WindowsUnit"
+- <<: *default_test_configuration
+  name: "WindowsUnit"
   CPUS: "16"
   RAM: "64"
   ARTIFACT_SLUG: windows-unittestfiles
