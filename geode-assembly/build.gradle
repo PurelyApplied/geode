@@ -577,3 +577,19 @@ task dumpInstalledJars(dependsOn: installDist) {
     }
   }
 }
+
+
+
+task checkAssemblycontents() {
+  //noinspection GroovyAssignabilityCheck
+  def expectedContentFile = sourceSets.test.resources.getSourceDirectories().find { resourceDir ->
+    resourceDir.toPath().resolve('assembly_content.txt')
+  }
+  inputs.files expectedContentFile
+
+
+  doLast {
+
+  }
+
+}

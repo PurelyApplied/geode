@@ -28,12 +28,9 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
-import org.apache.geode.test.junit.categories.RestAPITest;
 import org.apache.geode.util.test.TestUtil;
 
-@Category({RestAPITest.class})
 public class AssemblyContentsIntegrationTest {
 
   private static final String GEODE_HOME = System.getenv("GEODE_HOME");
