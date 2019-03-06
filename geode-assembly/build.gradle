@@ -18,6 +18,10 @@
 
 import org.apache.geode.gradle.plugins.DependencyConstraints
 
+import java.nio.file.Paths
+
+evaluationDependsOn(":geode-core")
+
 apply plugin: 'distribution'
 apply plugin: 'maven-publish'
 
