@@ -76,10 +76,8 @@ def clientToolsCopySpec = copySpec {
 
   from { project(':geode-protobuf-messages').zip.outputs.files }
 }
-
 def pulseToolsCopySpec = copySpec {
   into('tools/Pulse')
-
   from { project(':geode-pulse').configurations.archives.allArtifacts.files }
 }
 
@@ -362,6 +360,10 @@ repositories {
       artifact '/dist/tomcat/tomcat-6/v6.0.37/bin/[organisation]-[module]-[revision].[ext]'
     }
   }
+  // For gradle tooling dependencies
+  maven {
+    url 'https://repo.gradle.org/gradle/libs-releases'
+  }
 }
 
 def webServersDir = "$buildDir/generated-resources/webservers"
@@ -390,6 +392,7 @@ dependencies {
   geodeArchives project(':geode-core')
   geodeArchives project(':geode-json')
   geodeArchives project(':geode-lucene')
+  geodeArchives project(':geode-redis')
   geodeArchives project(':geode-old-client-support')
   geodeArchives project(':geode-protobuf')
   geodeArchives project(':geode-protobuf-messages')
@@ -456,6 +459,7 @@ dependencies {
   }
   acceptanceTestCompile(project(':geode-assembly:geode-assembly-test'))
   acceptanceTestCompile('org.apache.httpcomponents:httpclient')
+  acceptanceTestCompile('org.gradle:gradle-tooling-api:5.2.1')
 
 
   uiTestCompile(project(':geode-core'))
@@ -507,6 +511,7 @@ tasks.withType(Test){
 build.dependsOn(installDist)
 build.dependsOn(distTar)
 
+acceptanceTest.dependsOn(rootProject.getTasksByName("publishToMavenLocal", true))
 installDist.dependsOn ':extensions:geode-modules-assembly:dist'
 distributedTest.dependsOn ':extensions:session-testing-war:war'
 distributedTest.dependsOn ':geode-old-versions:build'

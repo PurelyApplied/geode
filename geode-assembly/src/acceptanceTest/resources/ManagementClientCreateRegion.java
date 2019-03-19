@@ -13,21 +13,31 @@
  * the License.
  */
 
+import javax.net.ssl.SSLContext;
+
+import org.apache.geode.cache.RegionShortcut;
 import org.apache.geode.cache.configuration.RegionConfig;
 import org.apache.geode.management.api.ClusterManagementResult;
 import org.apache.geode.management.api.ClusterManagementService;
 import org.apache.geode.management.client.ClusterManagementServiceProvider;
 
-public class ManagementClientTestCreateRegion {
-  public static void main(String[] args) {
+public class ManagementClientCreateRegion {
+  public static void main(String[] args) throws Exception {
     String regionName = args[0];
+    boolean useSsl = Boolean.parseBoolean(args[1]);
 
-    ClusterManagementService cms =
-        ClusterManagementServiceProvider.getService("http://localhost:7070/geode-management");
+    ClusterManagementService cms;
+    if (useSsl) {
+      // The default SSLContext will pull in all necessary javax.net.ssl properties
+      cms = ClusterManagementServiceProvider.getService("localhost", 7070,
+          SSLContext.getDefault(), null, null, null);
+    } else {
+      cms = ClusterManagementServiceProvider.getService("localhost", 7070);
+    }
 
     RegionConfig config = new RegionConfig();
     config.setName(regionName);
-    config.setType("REPLICATE");
+    config.setType(RegionShortcut.REPLICATE);
 
     ClusterManagementResult result = cms.create(config, "cluster");
 
@@ -38,4 +48,5 @@ public class ManagementClientTestCreateRegion {
 
     System.out.println("Successfully created region: " + regionName);
   }
+
 }

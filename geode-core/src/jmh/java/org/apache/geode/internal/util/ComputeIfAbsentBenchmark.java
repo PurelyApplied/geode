@@ -17,14 +17,13 @@ package org.apache.geode.internal.util;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Group;
+import org.openjdk.jmh.annotations.GroupThreads;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
@@ -32,7 +31,7 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
+
 
 /**
  * Test spins up threads that constantly do computeIfAbsent
@@ -50,58 +49,26 @@ public class ComputeIfAbsentBenchmark {
    */
   private static final double BENCHMARK_ITERATIONS = 10;
 
-  private static final int TIME_TO_QUIESCE_BEFORE_SAMPLING = 1;
-
-  private static final int THREAD_POOL_PROCESSOR_MULTIPLE = 2;
-
-  private ScheduledThreadPoolExecutor loadGenerationExecutorService;
-
-  private static boolean testRunning = true;
-
   @Setup(Level.Trial)
-  public void trialSetup() throws InterruptedException {
+  public void trialSetup() throws InterruptedException {}
 
-    final int numberOfThreads =
-        THREAD_POOL_PROCESSOR_MULTIPLE * Runtime.getRuntime().availableProcessors();
 
-    loadGenerationExecutorService =
-        (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(
-            numberOfThreads);
-
-    System.out.println(String.format("Pool has %d threads", numberOfThreads));
-
-    loadGenerationExecutorService.setRemoveOnCancelPolicy(true);
-
-    generateLoad(
-        loadGenerationExecutorService, numberOfThreads);
-
-    // allow system to quiesce
-    Thread.sleep(TIME_TO_QUIESCE_BEFORE_SAMPLING);
-  }
-
-  @TearDown(Level.Trial)
-  public void trialTeardown() {
-    testRunning = false;
-    loadGenerationExecutorService.shutdownNow();
+  @Group("getBucketIndexThroughput")
+  @GroupThreads(10)
+  @Benchmark
+  public void getBucketIndexLoad() {
+    JavaWorkarounds.computeIfAbsent(map, 1, k -> k);
   }
 
   @Benchmark
+  @Group("computeIfAbsentThroughput")
+  @GroupThreads(1)
   @Measurement(iterations = (int) BENCHMARK_ITERATIONS)
   @BenchmarkMode(Mode.Throughput)
   @OutputTimeUnit(TimeUnit.SECONDS)
   // @Warmup we don't warm up because our @Setup warms us up
   public Object computeIfAbsent() {
     return JavaWorkarounds.computeIfAbsent(map, 1, k -> k);
-  }
-
-  private void generateLoad(final ScheduledExecutorService executorService, int numThreads) {
-    for (int i = 0; i < numThreads; i++) {
-      executorService.schedule(() -> {
-        while (testRunning) {
-          JavaWorkarounds.computeIfAbsent(map, 1, k -> k);
-        }
-      }, 0, TimeUnit.MILLISECONDS);
-    }
   }
 
 }

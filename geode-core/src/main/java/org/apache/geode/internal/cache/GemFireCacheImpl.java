@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -76,6 +77,7 @@ import javax.transaction.TransactionManager;
 
 import com.sun.jna.Native;
 import com.sun.jna.Platform;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 
@@ -210,6 +212,7 @@ import org.apache.geode.internal.concurrent.ConcurrentHashSet;
 import org.apache.geode.internal.config.ClusterConfigurationNotAvailableException;
 import org.apache.geode.internal.jndi.JNDIInvoker;
 import org.apache.geode.internal.jta.TransactionManagerImpl;
+import org.apache.geode.internal.lang.ThrowableUtils;
 import org.apache.geode.internal.logging.InternalLogWriter;
 import org.apache.geode.internal.logging.LogService;
 import org.apache.geode.internal.logging.LoggingExecutors;
@@ -244,7 +247,6 @@ import org.apache.geode.pdx.internal.InternalPdxInstance;
 import org.apache.geode.pdx.internal.PdxInstanceFactoryImpl;
 import org.apache.geode.pdx.internal.PdxInstanceImpl;
 import org.apache.geode.pdx.internal.TypeRegistry;
-import org.apache.geode.redis.GeodeRedisServer;
 
 // TODO: somebody Come up with more reasonable values for {@link #DEFAULT_LOCK_TIMEOUT}, etc.
 /**
@@ -279,7 +281,8 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
    * The {@code CacheLifecycleListener} s that have been registered in this VM
    */
   @MakeNotStatic
-  private static final Set<CacheLifecycleListener> cacheLifecycleListeners = new HashSet<>();
+  private static final Set<CacheLifecycleListener> cacheLifecycleListeners =
+      new CopyOnWriteArraySet<>();
 
   /**
    * Define gemfire.Cache.ASYNC_EVENT_LISTENERS=true to invoke event listeners in the background
@@ -585,11 +588,6 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
   private GemFireMemcachedServer memcachedServer;
 
   /**
-   * Redis server is started when {@link DistributionConfig#getRedisPort()} is set
-   */
-  private GeodeRedisServer redisServer;
-
-  /**
    * {@link ExtensionPoint} support.
    *
    * @since GemFire 8.1
@@ -609,7 +607,9 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
 
   private final ClusterConfigurationLoader ccLoader = new ClusterConfigurationLoader();
 
-  private HttpService httpService;
+  private Optional<HttpService> httpService = Optional.ofNullable(null);
+
+  private final MeterRegistry meterRegistry;
 
   static {
     // this works around jdk bug 6427854, reported in ticket #44434
@@ -761,6 +761,7 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
    * @deprecated Rather than fishing for a cache with this static method, use a cache that is passed
    *             in to your method.
    */
+  @Deprecated
   public static GemFireCacheImpl getForPdx(String reason) {
 
     InternalDistributedSystem system = getAnyInstance();
@@ -782,12 +783,13 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
    * Currently only unit tests set the typeRegistry parameter to a non-null value
    */
   GemFireCacheImpl(boolean isClient, PoolFactory poolFactory,
-      InternalDistributedSystem internalDistributedSystem,
-      CacheConfig cacheConfig, boolean useAsyncEventListeners, TypeRegistry typeRegistry) {
+      InternalDistributedSystem internalDistributedSystem, CacheConfig cacheConfig,
+      boolean useAsyncEventListeners, TypeRegistry typeRegistry, MeterRegistry meterRegistry) {
     this.isClient = isClient;
     this.poolFactory = poolFactory;
     this.cacheConfig = cacheConfig; // do early for bug 43213
     this.pdxRegistry = typeRegistry;
+    this.meterRegistry = meterRegistry;
 
     // Synchronized to prevent a new cache from being created
     // before an old one has finished closing
@@ -933,9 +935,13 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
       addRegionEntrySynchronizationListener(new GatewaySenderQueueEntrySynchronizationListener());
       backupService = new BackupService(this);
       if (!this.isClient) {
-        httpService = new HttpService(systemConfig.getHttpServiceBindAddress(),
-            systemConfig.getHttpServicePort(), SSLConfigurationFactory
-                .getSSLConfigForComponent(systemConfig, SecurableCommunicationChannel.WEB));
+        try {
+          httpService = Optional.of(new HttpService(systemConfig.getHttpServiceBindAddress(),
+              systemConfig.getHttpServicePort(), SSLConfigurationFactory
+                  .getSSLConfigForComponent(systemConfig, SecurableCommunicationChannel.WEB)));
+        } catch (Throwable ex) {
+          logger.warn("Could not enable HttpService: {}", ex.getMessage());
+        }
       }
     } // synchronized
   }
@@ -947,7 +953,12 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
   }
 
   @Override
-  public HttpService getHttpService() {
+  public MeterRegistry getMeterRegistry() {
+    return meterRegistry;
+  }
+
+  @Override
+  public Optional<HttpService> getHttpService() {
     return httpService;
   }
 
@@ -1152,6 +1163,12 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
       listener.cacheCreated(this);
     }
 
+    if (isClient()) {
+      initializeClientRegionShortcuts(this);
+    } else {
+      initializeRegionShortcuts(this);
+    }
+
     // set ClassPathLoader and then deploy cluster config jars
     ClassPathLoader.setLatestToDefault(this.system.getConfig().getDeployWorkingDir());
 
@@ -1209,8 +1226,6 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
     startColocatedJmxManagerLocator();
 
     startMemcachedServer();
-
-    startRedisServer();
 
     startRestAgentServer(this);
 
@@ -1278,25 +1293,6 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
       this.memcachedServer =
           new GemFireMemcachedServer(bindAddress, port, Protocol.valueOf(protocol.toUpperCase()));
       this.memcachedServer.start();
-    }
-  }
-
-  private void startRedisServer() {
-    int port = this.system.getConfig().getRedisPort();
-    if (port != 0) {
-      String bindAddress = this.system.getConfig().getRedisBindAddress();
-      assert bindAddress != null;
-      if (bindAddress.equals(DistributionConfig.DEFAULT_REDIS_BIND_ADDRESS)) {
-        getLogger().info(
-            String.format("Starting GeodeRedisServer on port %s",
-                new Object[] {port}));
-      } else {
-        getLogger().info(
-            String.format("Starting GeodeRedisServer on bind address %s on port %s",
-                new Object[] {bindAddress, port}));
-      }
-      this.redisServer = new GeodeRedisServer(bindAddress, port);
-      this.redisServer.start();
     }
   }
 
@@ -1373,11 +1369,6 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
     URL url = getCacheXmlURL();
     String cacheXmlDescription = this.cacheConfig.getCacheXMLDescription();
     if (url == null && cacheXmlDescription == null) {
-      if (isClient()) {
-        initializeClientRegionShortcuts(this);
-      } else {
-        initializeRegionShortcuts(this);
-      }
       initializePdxRegistry();
       readyDynamicRegionFactory();
       return; // nothing needs to be done
@@ -1533,12 +1524,8 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
       }
 
       // Attempt to stick rootCause at tail end of the exception chain.
-      Throwable nt = throwable;
-      while (nt.getCause() != null) {
-        nt = nt.getCause();
-      }
       try {
-        nt.initCause(GemFireCacheImpl.this.disconnectCause);
+        ThrowableUtils.setRootCause(throwable, GemFireCacheImpl.this.disconnectCause);
         return new CacheClosedException(reason, throwable);
       } catch (IllegalStateException ignore) {
         // Bug 39496 (JRockit related) Give up. The following
@@ -2191,11 +2178,9 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
 
           stopMemcachedServer();
 
-          stopRedisServer();
+          this.stopServices();
 
-          if (httpService != null) {
-            httpService.stop();
-          }
+          httpService.ifPresent(HttpService::stop);
 
           // no need to track PR instances since we won't create any more
           // cacheServers or gatewayHubs
@@ -2405,6 +2390,16 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
 
   }
 
+  private void stopServices() {
+    for (CacheService service : this.services.values()) {
+      try {
+        service.close();
+      } catch (Throwable t) {
+        logger.warn("Error stopping service " + service, t);
+      }
+    }
+  }
+
   private void closeOffHeapEvictor() {
     OffHeapEvictor evictor = this.offHeapEvictor;
     if (evictor != null) {
@@ -2458,11 +2453,6 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
           new Object[] {this.system.getConfig().getMemcachedPort()});
       this.memcachedServer.shutdown();
     }
-  }
-
-  private void stopRedisServer() {
-    if (this.redisServer != null)
-      this.redisServer.shutdown();
   }
 
   private void prepareDiskStoresForClose() {
@@ -4266,7 +4256,6 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
          * Now replace all replaceable system properties here using {@code PropertyResolver}
          */
         String replacedXmlString = this.resolver.processUnresolvableString(stringWriter.toString());
-
         /*
          * Turn the string back into the default encoding so that the XML parser can work correctly
          * in the presence of an "encoding" attribute in the XML prolog.

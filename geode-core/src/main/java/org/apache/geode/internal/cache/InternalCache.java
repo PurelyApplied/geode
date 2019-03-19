@@ -20,11 +20,14 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
 import javax.transaction.TransactionManager;
+
+import io.micrometer.core.instrument.MeterRegistry;
 
 import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.CacheClosedException;
@@ -371,9 +374,11 @@ public interface InternalCache extends Cache, Extensible<Cache>, CacheTime {
    */
   InternalCacheForClientAccess getCacheForProcessingClientRequests();
 
-  HttpService getHttpService();
+  Optional<HttpService> getHttpService();
 
   void initialize();
 
   void throwCacheExistsException();
+
+  MeterRegistry getMeterRegistry();
 }

@@ -30,6 +30,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
 import org.apache.geode.annotations.Experimental;
+import org.apache.geode.cache.RegionShortcut;
 import org.apache.geode.management.api.RestfulEndpoint;
 
 
@@ -175,7 +176,7 @@ public class RegionConfig implements CacheElement, RestfulEndpoint {
 
   @Override
   public String getEndpoint() {
-    return "/v2/regions";
+    return "/regions";
   }
 
   public RegionAttributesType getRegionAttributes() {
@@ -356,9 +357,9 @@ public class RegionConfig implements CacheElement, RestfulEndpoint {
    * {@link String }
    *
    */
-  public void setType(String value) {
-    this.type = value;
-    if (value != null && value.length() > 0) {
+  public void setType(RegionShortcut regionShortcut) {
+    if (regionShortcut != null) {
+      this.type = regionShortcut.name();
       setShortcutAttributes();
     }
   }

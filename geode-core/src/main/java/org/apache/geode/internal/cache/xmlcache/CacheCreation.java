@@ -31,6 +31,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -38,6 +39,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.naming.Context;
 import javax.transaction.TransactionManager;
+
+import io.micrometer.core.instrument.MeterRegistry;
 
 import org.apache.geode.CancelCriterion;
 import org.apache.geode.GemFireIOException;
@@ -2437,7 +2440,12 @@ public class CacheCreation implements InternalCache {
   }
 
   @Override
-  public HttpService getHttpService() {
+  public Optional<HttpService> getHttpService() {
+    throw new UnsupportedOperationException("Should not be invoked");
+  }
+
+  @Override
+  public MeterRegistry getMeterRegistry() {
     throw new UnsupportedOperationException("Should not be invoked");
   }
 }

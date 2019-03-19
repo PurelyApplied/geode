@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -32,7 +31,8 @@ import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.management.internal.ManagementConstants;
 import org.apache.geode.management.internal.SystemManagementService;
 import org.apache.geode.management.internal.beans.DataQueryEngine;
-import org.apache.geode.management.internal.cli.json.TypedJson;
+import org.apache.geode.management.internal.beans.QueryDataFunction;
+import org.apache.geode.management.internal.cli.json.GfJsonObject;
 import org.apache.geode.management.model.EmptyObject;
 import org.apache.geode.management.model.Item;
 import org.apache.geode.management.model.Order;
@@ -61,7 +61,8 @@ public class DataQueryEngineIntegrationTest {
    * Number of elements to be shown in queryData operation if query results contain collections like
    * Map, List etc.
    */
-  private static final int queryCollectionsDepth = TypedJson.DEFAULT_COLLECTION_ELEMENT_LIMIT;
+  private static final int queryCollectionsDepth =
+      QueryDataFunction.DEFAULT_COLLECTION_ELEMENT_LIMIT;
 
   @Rule
   public ServerStarterRule server = new ServerStarterRule().withNoCacheServer()
@@ -97,14 +98,14 @@ public class DataQueryEngineIntegrationTest {
     region.put("order1", order);
 
     String expectedResult =
-        "{\"result\":[[\"org.apache.geode.management.model.Order\",{\"items\":[\"java.util.Collection\",{\"0\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":[\"java.lang.String\",\"Book\"],\"itemId\":[\"java.lang.String\",\"ID_1\"],\"order\":[\"org.apache.geode.management.model.Order\",\"org.apache.geode.management.model.Order\"]}],\"1\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":[\"java.lang.String\",\"Book\"],\"itemId\":[\"java.lang.String\",\"ID_2\"],\"order\":[\"org.apache.geode.management.model.Order\",\"org.apache.geode.management.model.Order\"]}],\"2\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":[\"java.lang.String\",\"Book\"],\"itemId\":[\"java.lang.String\",\"ID_3\"],\"order\":[\"org.apache.geode.management.model.Order\",\"org.apache.geode.management.model.Order\"]}],\"3\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":[\"java.lang.String\",\"Book\"],\"itemId\":[\"java.lang.String\",\"ID_4\"],\"order\":[\"org.apache.geode.management.model.Order\",\"org.apache.geode.management.model.Order\"]}],\"4\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":[\"java.lang.String\",\"Book\"],\"itemId\":[\"java.lang.String\",\"ID_5\"],\"order\":[\"org.apache.geode.management.model.Order\",\"org.apache.geode.management.model.Order\"]}]}],\"id\":[\"java.lang.String\",\"test\"]}]]}";
+        "{\"result\":[[\"org.apache.geode.management.model.Order\",{\"id\":\"test\",\"items\":[\"java.util.ArrayList\",{\"0\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":\"Book\",\"itemId\":\"ID_1\",\"order\":\"duplicate org.apache.geode.management.model.Order\"}],\"1\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":\"Book\",\"itemId\":\"ID_2\",\"order\":\"duplicate org.apache.geode.management.model.Order\"}],\"2\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":\"Book\",\"itemId\":\"ID_3\",\"order\":\"duplicate org.apache.geode.management.model.Order\"}],\"3\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":\"Book\",\"itemId\":\"ID_4\",\"order\":\"duplicate org.apache.geode.management.model.Order\"}],\"4\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":\"Book\",\"itemId\":\"ID_5\",\"order\":\"duplicate org.apache.geode.management.model.Order\"}]}]}]]}";
     Object result = queryEngine.queryForJsonResult(QUERY_1, 0, queryResultSetLimit,
         queryCollectionsDepth);
     String queryResult = (String) result;
 
     assertThat(queryResult).isEqualToIgnoringWhitespace(expectedResult);
     // If not correct JSON format this will throw a JSONException
-    new JSONObject(queryResult);
+    new GfJsonObject(queryResult);
   }
 
   /**
@@ -130,11 +131,11 @@ public class DataQueryEngineIntegrationTest {
         queryCollectionsDepth);
 
     String expectedResult =
-        "{\"result\":[[\"org.apache.geode.management.model.Order\",{\"items\":[\"java.util.Collection\",{\"0\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":[\"java.lang.String\",\"Book\"],\"itemId\":[\"java.lang.String\",\"ID_1\"],\"order\":[\"org.apache.geode.management.model.Order\",{\"items\":[\"java.util.Collection\",{}],\"id\":[\"java.lang.String\",\"ORDER_ID_1\"]}]}],\"1\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":[\"java.lang.String\",\"Book\"],\"itemId\":[\"java.lang.String\",\"ID_2\"],\"order\":[\"org.apache.geode.management.model.Order\",{\"items\":[\"java.util.Collection\",{}],\"id\":[\"java.lang.String\",\"ORDER_ID_2\"]}]}],\"2\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":[\"java.lang.String\",\"Book\"],\"itemId\":[\"java.lang.String\",\"ID_3\"],\"order\":[\"org.apache.geode.management.model.Order\",{\"items\":[\"java.util.Collection\",{}],\"id\":[\"java.lang.String\",\"ORDER_ID_3\"]}]}],\"3\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":[\"java.lang.String\",\"Book\"],\"itemId\":[\"java.lang.String\",\"ID_4\"],\"order\":[\"org.apache.geode.management.model.Order\",{\"items\":[\"java.util.Collection\",{}],\"id\":[\"java.lang.String\",\"ORDER_ID_4\"]}]}],\"4\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":[\"java.lang.String\",\"Book\"],\"itemId\":[\"java.lang.String\",\"ID_5\"],\"order\":[\"org.apache.geode.management.model.Order\",{\"items\":[\"java.util.Collection\",{}],\"id\":[\"java.lang.String\",\"ORDER_ID_5\"]}]}]}],\"id\":[\"java.lang.String\",\"test\"]}]]}";
+        "{\"result\":[[\"org.apache.geode.management.model.Order\",{\"id\":\"test\",\"items\":[\"java.util.ArrayList\",{\"0\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":\"Book\",\"itemId\":\"ID_1\",\"order\":[\"org.apache.geode.management.model.Order\",{\"id\":\"ORDER_ID_1\",\"items\":[\"java.util.ArrayList\",{}]}]}],\"1\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":\"Book\",\"itemId\":\"ID_2\",\"order\":[\"org.apache.geode.management.model.Order\",{\"id\":\"ORDER_ID_2\",\"items\":[\"java.util.ArrayList\",{}]}]}],\"2\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":\"Book\",\"itemId\":\"ID_3\",\"order\":[\"org.apache.geode.management.model.Order\",{\"id\":\"ORDER_ID_3\",\"items\":[\"java.util.ArrayList\",{}]}]}],\"3\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":\"Book\",\"itemId\":\"ID_4\",\"order\":[\"org.apache.geode.management.model.Order\",{\"id\":\"ORDER_ID_4\",\"items\":[\"java.util.ArrayList\",{}]}]}],\"4\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":\"Book\",\"itemId\":\"ID_5\",\"order\":[\"org.apache.geode.management.model.Order\",{\"id\":\"ORDER_ID_5\",\"items\":[\"java.util.ArrayList\",{}]}]}]}]}]]}";
     assertThat(queryResult).isEqualToIgnoringWhitespace(expectedResult);
 
     // If not correct JSON format this will throw a JSONException
-    new JSONObject(queryResult);
+    new GfJsonObject(queryResult);
   }
 
   /**
@@ -160,11 +161,11 @@ public class DataQueryEngineIntegrationTest {
     String queryResult = queryEngine.queryForJsonResult(QUERY_1, 0, queryResultSetLimit,
         queryCollectionsDepth);
     String expectedResult =
-        "{\"result\":[[\"org.apache.geode.management.model.Order\",{\"items\":[\"java.util.Collection\",{\"0\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":[\"java.lang.String\",\"Book\"],\"itemId\":[\"java.lang.String\",\"ID_1\"],\"order\":[\"org.apache.geode.management.model.Order\",{\"items\":[\"java.util.Collection\",\"java.util.ArrayList\"],\"id\":[\"java.lang.String\",\"ORDER_ID_1\"]}]}],\"1\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":[\"java.lang.String\",\"Book\"],\"itemId\":[\"java.lang.String\",\"ID_2\"],\"order\":[\"org.apache.geode.management.model.Order\",{\"items\":[\"java.util.Collection\",\"java.util.ArrayList\"],\"id\":[\"java.lang.String\",\"ORDER_ID_2\"]}]}],\"2\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":[\"java.lang.String\",\"Book\"],\"itemId\":[\"java.lang.String\",\"ID_3\"],\"order\":[\"org.apache.geode.management.model.Order\",{\"items\":[\"java.util.Collection\",\"java.util.ArrayList\"],\"id\":[\"java.lang.String\",\"ORDER_ID_3\"]}]}],\"3\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":[\"java.lang.String\",\"Book\"],\"itemId\":[\"java.lang.String\",\"ID_4\"],\"order\":[\"org.apache.geode.management.model.Order\",{\"items\":[\"java.util.Collection\",\"java.util.ArrayList\"],\"id\":[\"java.lang.String\",\"ORDER_ID_4\"]}]}],\"4\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":[\"java.lang.String\",\"Book\"],\"itemId\":[\"java.lang.String\",\"ID_5\"],\"order\":[\"org.apache.geode.management.model.Order\",{\"items\":[\"java.util.Collection\",\"java.util.ArrayList\"],\"id\":[\"java.lang.String\",\"ORDER_ID_5\"]}]}]}],\"id\":[\"java.lang.String\",\"ORDER_TEST\"]}]]}";
+        "{\"result\":[[\"org.apache.geode.management.model.Order\",{\"id\":\"ORDER_TEST\",\"items\":[\"java.util.ArrayList\",{\"0\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":\"Book\",\"itemId\":\"ID_1\",\"order\":[\"org.apache.geode.management.model.Order\",{\"id\":\"ORDER_ID_1\",\"items\":[\"java.util.ArrayList\",{\"0\":\"duplicate org.apache.geode.management.model.Item\",\"1\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":\"Book\",\"itemId\":\"ID_2\",\"order\":[\"org.apache.geode.management.model.Order\",{\"id\":\"ORDER_ID_2\",\"items\":[\"java.util.ArrayList\",{\"0\":\"duplicate org.apache.geode.management.model.Item\",\"1\":\"duplicate org.apache.geode.management.model.Item\",\"2\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":\"Book\",\"itemId\":\"ID_3\",\"order\":[\"org.apache.geode.management.model.Order\",{\"id\":\"ORDER_ID_3\",\"items\":[\"java.util.ArrayList\",{\"0\":\"duplicate org.apache.geode.management.model.Item\",\"1\":\"duplicate org.apache.geode.management.model.Item\",\"2\":\"duplicate org.apache.geode.management.model.Item\",\"3\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":\"Book\",\"itemId\":\"ID_4\",\"order\":[\"org.apache.geode.management.model.Order\",{\"id\":\"ORDER_ID_4\",\"items\":[\"java.util.ArrayList\",{\"0\":\"duplicate org.apache.geode.management.model.Item\",\"1\":\"duplicate org.apache.geode.management.model.Item\",\"2\":\"duplicate org.apache.geode.management.model.Item\",\"3\":\"duplicate org.apache.geode.management.model.Item\",\"4\":[\"org.apache.geode.management.model.Item\",{\"itemDescription\":\"Book\",\"itemId\":\"ID_5\",\"order\":[\"org.apache.geode.management.model.Order\",{\"id\":\"ORDER_ID_5\",\"items\":[\"java.util.ArrayList\",{\"0\":\"duplicate org.apache.geode.management.model.Item\",\"1\":\"duplicate org.apache.geode.management.model.Item\",\"2\":\"duplicate org.apache.geode.management.model.Item\",\"3\":\"duplicate org.apache.geode.management.model.Item\",\"4\":\"duplicate org.apache.geode.management.model.Item\"}]}]}]}]}]}],\"4\":\"duplicate org.apache.geode.management.model.Item\"}]}]}],\"3\":\"duplicate org.apache.geode.management.model.Item\",\"4\":\"duplicate org.apache.geode.management.model.Item\"}]}]}],\"2\":\"duplicate org.apache.geode.management.model.Item\",\"3\":\"duplicate org.apache.geode.management.model.Item\",\"4\":\"duplicate org.apache.geode.management.model.Item\"}]}]}],\"1\":\"duplicate org.apache.geode.management.model.Item\",\"2\":\"duplicate org.apache.geode.management.model.Item\",\"3\":\"duplicate org.apache.geode.management.model.Item\",\"4\":\"duplicate org.apache.geode.management.model.Item\"}]}]]}";
     assertThat(queryResult).isEqualToIgnoringWhitespace(expectedResult);
 
     // If not correct JSON format this will throw a JSONException
-    new JSONObject(queryResult);
+    new GfJsonObject(queryResult);
   }
 
   @Test
@@ -188,7 +189,7 @@ public class DataQueryEngineIntegrationTest {
     System.out.println("Query Result: " + queryResult);
 
     // If not correct JSON format this will throw a JSONException
-    new JSONObject(queryResult);
+    new GfJsonObject(queryResult);
   }
 
   @Test
@@ -214,7 +215,7 @@ public class DataQueryEngineIntegrationTest {
     System.out.println("Query Result: " + queryResult);
 
     // If not correct JSON format this will throw a JSONException
-    new JSONObject(queryResult);
+    new GfJsonObject(queryResult);
   }
 
   @Test
@@ -240,7 +241,7 @@ public class DataQueryEngineIntegrationTest {
     System.out.println("Query Result: " + queryResult);
 
     // If not correct JSON format this will throw a JSONException
-    new JSONObject(queryResult);
+    new GfJsonObject(queryResult);
 
   }
 
@@ -253,7 +254,7 @@ public class DataQueryEngineIntegrationTest {
     System.out.println(queryResult);
 
     // If not correct JSON format this will throw a JSONException
-    new JSONObject(queryResult);
+    new GfJsonObject(queryResult);
   }
 
   @Test
@@ -266,7 +267,7 @@ public class DataQueryEngineIntegrationTest {
     assertThat(queryResult).isEqualToIgnoringWhitespace(expectedResult);
 
     // If not correct JSON format this will throw a JSONException
-    new JSONObject(queryResult);
+    new GfJsonObject(queryResult);
   }
 
   @Test
@@ -276,11 +277,11 @@ public class DataQueryEngineIntegrationTest {
     String queryResult = queryEngine.queryForJsonResult(QUERY_1, 0, queryResultSetLimit,
         queryCollectionsDepth);
     String expectedResult =
-        "{\"result\":[[\"org.apache.geode.management.model.SubOrder\",{\"items\":[\"java.util.Collection\",{}],\"id\":[\"java.lang.String\",\"null1\"]}]]}";
+        "{\"result\":[[\"org.apache.geode.management.model.SubOrder\",{\"id\":\"null1\",\"items\":[\"java.util.ArrayList\",{}]}]]}";
     assertThat(queryResult).isEqualToIgnoringWhitespace(expectedResult);
 
     // If not correct JSON format this will throw a JSONException
-    new JSONObject(queryResult);
+    new GfJsonObject(queryResult);
   }
 
   @Test
@@ -299,11 +300,11 @@ public class DataQueryEngineIntegrationTest {
     String queryResult = queryEngine.queryForJsonResult(QUERY_1, 0, queryResultSetLimit,
         queryCollectionsDepth);
     String expectedResult =
-        "{\"result\":[[\"org.apache.geode.pdx.PdxInstance\",{\"ID\":[\"java.lang.Integer\",111],\"status\":[\"java.lang.String\",\"active\"],\"secId\":[\"java.lang.String\",\"IBM\"]}]]}";
+        "{\"result\":[[\"org.apache.geode.pdx.internal.PdxInstanceImpl\",{\"ID\":111,\"status\":\"active\",\"secId\":\"IBM\"}]]}";
     assertThat(queryResult).isEqualToIgnoringWhitespace(expectedResult);
 
     // If not correct JSON format this will throw a JSONException
-    new JSONObject(queryResult);
+    new GfJsonObject(queryResult);
   }
 
   @Test
@@ -317,11 +318,11 @@ public class DataQueryEngineIntegrationTest {
     String queryResult = queryEngine.queryForJsonResult(QUERY_1, 0, queryResultSetLimit,
         queryCollectionsDepth);
     String expectedResult =
-        "{\"result\":[[\"org.apache.geode.management.model.SubOrder[]\",[{\"items\":[\"java.util.Collection\",{}],\"id\":[\"java.lang.String\",\"null1\"]},null]]]}";
+        "{\"result\":[[\"[Lorg.apache.geode.management.model.SubOrder;\",[[\"org.apache.geode.management.model.SubOrder\",{\"id\":\"null1\",\"items\":[\"java.util.ArrayList\",{}]}],null]]]}";
     assertThat(queryResult).isEqualToIgnoringWhitespace(expectedResult);
 
     // If not correct JSON format this will throw a JSONException
-    new JSONObject(queryResult);
+    new GfJsonObject(queryResult);
   }
 
   @Test
@@ -335,11 +336,11 @@ public class DataQueryEngineIntegrationTest {
     String queryResult = queryEngine.queryForJsonResult(QUERY_1, 0, queryResultSetLimit,
         queryCollectionsDepth);
     String expectedResult =
-        "{\"result\":[[\"org.apache.geode.management.model.SubOrder[]\",[{\"items\":[\"java.util.Collection\",{}],\"id\":[\"java.lang.String\",\"null1\"]},null]]]}";
+        "{\"result\":[[\"[Lorg.apache.geode.management.model.SubOrder;\",[[\"org.apache.geode.management.model.SubOrder\",{\"id\":\"null1\",\"items\":[\"java.util.ArrayList\",{}]}],null]]]}";
     assertThat(queryResult).isEqualToIgnoringWhitespace(expectedResult);
 
     // If not correct JSON format this will throw a JSONException
-    new JSONObject(queryResult);
+    new GfJsonObject(queryResult);
   }
 
 

@@ -20,26 +20,17 @@ import static org.apache.geode.distributed.ConfigurationProperties.HTTP_SERVICE_
 import static org.apache.geode.distributed.ConfigurationProperties.JMX_MANAGER_SSL_PREFIX;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.KeyStore;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Properties;
 
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.shell.core.annotation.CliCommand;
@@ -52,7 +43,6 @@ import org.apache.geode.internal.net.SSLConfigurationFactory;
 import org.apache.geode.internal.security.SecurableCommunicationChannel;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.ConverterHint;
-import org.apache.geode.management.cli.Result;
 import org.apache.geode.management.internal.JmxManagerLocatorRequest;
 import org.apache.geode.management.internal.JmxManagerLocatorResponse;
 import org.apache.geode.management.internal.SSLUtil;
@@ -61,8 +51,8 @@ import org.apache.geode.management.internal.cli.LogWrapper;
 import org.apache.geode.management.internal.cli.converters.ConnectionEndpointConverter;
 import org.apache.geode.management.internal.cli.domain.ConnectToLocatorResult;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
-import org.apache.geode.management.internal.cli.result.InfoResultData;
-import org.apache.geode.management.internal.cli.result.ResultBuilder;
+import org.apache.geode.management.internal.cli.result.model.InfoResultModel;
+import org.apache.geode.management.internal.cli.result.model.ResultModel;
 import org.apache.geode.management.internal.cli.shell.Gfsh;
 import org.apache.geode.management.internal.cli.shell.JmxOperationInvoker;
 import org.apache.geode.management.internal.cli.shell.OperationInvoker;
@@ -88,7 +78,7 @@ public class ConnectCommand extends OfflineGfshCommand {
   @CliCommand(value = {CliStrings.CONNECT}, help = CliStrings.CONNECT__HELP)
   @CliMetaData(shellOnly = true, relatedTopic = {CliStrings.TOPIC_GFSH, CliStrings.TOPIC_GEODE_JMX,
       CliStrings.TOPIC_GEODE_MANAGER})
-  public Result connect(
+  public ResultModel connect(
       @CliOption(key = {CliStrings.CONNECT__LOCATOR},
           unspecifiedDefaultValue = ConnectionEndpointConverter.DEFAULT_LOCATOR_ENDPOINTS,
           optionContext = ConnectionEndpoint.LOCATOR_OPTION_CONTEXT,
@@ -125,13 +115,13 @@ public class ConnectCommand extends OfflineGfshCommand {
           unspecifiedDefaultValue = "false",
           help = "When connecting via HTTP, connects using 1-way SSL validation rather than 2-way SSL validation.") boolean skipSslValidation) {
 
-    Result result;
+    ResultModel result = new ResultModel();
     Gfsh gfsh = getGfsh();
 
     // bail out if gfsh is already connected.
     if (gfsh != null && gfsh.isConnectedAndReady()) {
-      return ResultBuilder
-          .createInfoResult("Already connected to: " + getGfsh().getOperationInvoker().toString());
+      return ResultModel
+          .createInfo("Already connected to: " + getGfsh().getOperationInvoker().toString());
     }
 
     if (StringUtils.startsWith(url, "https")) {
@@ -187,10 +177,10 @@ public class ConnectCommand extends OfflineGfshCommand {
     // will reach here only when remoteVersion is not available or does not match
     invoker.stop();
     if (remoteVersion == null) {
-      return ResultBuilder.createUserErrorResult(
+      return ResultModel.createError(
           String.format("Cannot use a %s gfsh client to connect to this cluster.", gfshVersion));
     } else {
-      return ResultBuilder.createUserErrorResult(String.format(
+      return ResultModel.createError(String.format(
           "Cannot use a %s gfsh client to connect to a %s cluster.", gfshVersion, remoteVersion));
     }
   }
@@ -278,7 +268,7 @@ public class ConnectCommand extends OfflineGfshCommand {
   }
 
 
-  Result httpConnect(Properties gfProperties, String url, boolean skipSslVerification) {
+  ResultModel httpConnect(Properties gfProperties, String url, boolean skipSslVerification) {
     Gfsh gfsh = getGfsh();
     try {
       SSLConfig sslConfig = SSLConfigurationFactory.getSSLConfigForComponent(gfProperties,
@@ -297,7 +287,7 @@ public class ConnectCommand extends OfflineGfshCommand {
 
       LogWrapper.getInstance().info(
           CliStrings.format(CliStrings.CONNECT__MSG__SUCCESS, operationInvoker.toString()));
-      return ResultBuilder.createInfoResult(
+      return ResultModel.createInfo(
           CliStrings.format(CliStrings.CONNECT__MSG__SUCCESS, operationInvoker.toString()));
 
     } catch (SecurityException | AuthenticationFailedException e) {
@@ -319,7 +309,8 @@ public class ConnectCommand extends OfflineGfshCommand {
     }
   }
 
-  Result jmxConnect(Properties gfProperties, boolean useSsl, ConnectionEndpoint memberRmiHostPort,
+  ResultModel jmxConnect(Properties gfProperties, boolean useSsl,
+      ConnectionEndpoint memberRmiHostPort,
       ConnectionEndpoint locatorTcpHostPort, boolean retry) {
     ConnectionEndpoint jmxHostPortToConnect = null;
     Gfsh gfsh = getGfsh();
@@ -364,16 +355,17 @@ public class ConnectCommand extends OfflineGfshCommand {
             new Object[] {jmxHostPortToConnect.toString(false)}));
       }
 
-      InfoResultData infoResultData = ResultBuilder.createInfoResultData();
+      ResultModel result = new ResultModel();
+      InfoResultModel infoResultModel = result.addInfo();
       JmxOperationInvoker operationInvoker = new JmxOperationInvoker(jmxHostPortToConnect.getHost(),
           jmxHostPortToConnect.getPort(), gfProperties);
 
       gfsh.setOperationInvoker(operationInvoker);
-      infoResultData.addLine(CliStrings.format(CliStrings.CONNECT__MSG__SUCCESS,
+      infoResultModel.addLine(CliStrings.format(CliStrings.CONNECT__MSG__SUCCESS,
           jmxHostPortToConnect.toString(false)));
       LogWrapper.getInstance().info(CliStrings.format(CliStrings.CONNECT__MSG__SUCCESS,
           jmxHostPortToConnect.toString(false)));
-      return ResultBuilder.buildResult(infoResultData);
+      return result;
     } catch (SecurityException | AuthenticationFailedException e) {
       // if it's security exception, and we already sent in username and password, still returns the
       // connection error
@@ -428,96 +420,26 @@ public class ConnectCommand extends OfflineGfshCommand {
         locatorResponse.isJmxManagerSslEnabled());
   }
 
-  private KeyManager[] getKeyManagers(SSLConfig sslConfig) throws Exception {
-    FileInputStream keyStoreStream = null;
-    KeyManagerFactory keyManagerFactory = null;
 
-    try {
-      if (StringUtils.isNotBlank(sslConfig.getKeystore())) {
-        KeyStore clientKeys = KeyStore.getInstance(sslConfig.getKeystoreType());
-        keyStoreStream = new FileInputStream(sslConfig.getKeystore());
-        clientKeys.load(keyStoreStream, sslConfig.getKeystorePassword().toCharArray());
 
-        keyManagerFactory =
-            KeyManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        keyManagerFactory.init(clientKeys, sslConfig.getKeystorePassword().toCharArray());
-      }
-    } finally {
-      if (keyStoreStream != null) {
-        keyStoreStream.close();
-      }
-    }
-
-    return keyManagerFactory != null ? keyManagerFactory.getKeyManagers() : null;
-  }
-
-  private TrustManager[] getTrustManagers(SSLConfig sslConfig, boolean skipSslVerification)
-      throws Exception {
-    FileInputStream trustStoreStream = null;
-    TrustManagerFactory trustManagerFactory = null;
-
-    if (skipSslVerification) {
-      TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
-        @Override
-        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-          return null;
-        }
-
-        @Override
-        public void checkClientTrusted(X509Certificate[] certs, String authType) {}
-
-        @Override
-        public void checkServerTrusted(X509Certificate[] certs, String authType) {}
-
-      }};
-      return trustAllCerts;
-    }
-
-    try {
-      // load server public key
-      if (StringUtils.isNotBlank(sslConfig.getTruststore())) {
-        KeyStore serverPub = KeyStore.getInstance(sslConfig.getTruststoreType());
-        trustStoreStream = new FileInputStream(sslConfig.getTruststore());
-        serverPub.load(trustStoreStream, sslConfig.getTruststorePassword().toCharArray());
-        trustManagerFactory =
-            TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        trustManagerFactory.init(serverPub);
-      }
-    } finally {
-      if (trustStoreStream != null) {
-        trustStoreStream.close();
-      }
-    }
-    return trustManagerFactory != null ? trustManagerFactory.getTrustManagers() : null;
-  }
-
-  private void configureHttpsURLConnection(SSLConfig sslConfig, boolean skipSslVerification)
-      throws Exception {
-    KeyManager[] keyManagers = getKeyManagers(sslConfig);
-    TrustManager[] trustManagers = getTrustManagers(sslConfig, skipSslVerification);
-
+  private void configureHttpsURLConnection(SSLConfig sslConfig, boolean skipSslVerification) {
+    SSLContext ssl = SSLUtil.createAndConfigureSSLContext(sslConfig, skipSslVerification);
     if (skipSslVerification) {
       HttpsURLConnection.setDefaultHostnameVerifier((String s, SSLSession sslSession) -> true);
     }
-
-    SSLContext ssl =
-        SSLContext.getInstance(SSLUtil.getSSLAlgo(SSLUtil.readArray(sslConfig.getProtocols())));
-
-    ssl.init(keyManagers, trustManagers, new SecureRandom());
-
     HttpsURLConnection.setDefaultSSLSocketFactory(ssl.getSocketFactory());
   }
 
-  private Result handleException(Exception e) {
+  private ResultModel handleException(Exception e) {
     return handleException(e, e.getMessage());
   }
 
-  private Result handleException(Exception e, String errorMessage) {
+  private ResultModel handleException(Exception e, String errorMessage) {
     LogWrapper.getInstance().severe(errorMessage, e);
-    return ResultBuilder.createConnectionErrorResult(errorMessage);
+    return ResultModel.createError(errorMessage);
   }
 
-  private Result handleException(Exception e, ConnectionEndpoint hostPortToConnect) {
+  private ResultModel handleException(Exception e, ConnectionEndpoint hostPortToConnect) {
     if (hostPortToConnect == null) {
       return handleException(e);
     }
