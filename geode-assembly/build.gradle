@@ -272,7 +272,6 @@ def libCopySpec = copySpec {
         'geode-connectors',
         'geode-core',
         'geode-cq',
-        'geode-json',
         'geode-lucene',
         'geode-old-client-support',
         'geode-protobuf',
@@ -390,7 +389,6 @@ dependencies {
   geodeArchives project(':geode-common')
   geodeArchives project(':geode-connectors')
   geodeArchives project(':geode-core')
-  geodeArchives project(':geode-json')
   geodeArchives project(':geode-lucene')
   geodeArchives project(':geode-redis')
   geodeArchives project(':geode-old-client-support')
@@ -417,6 +415,7 @@ dependencies {
     exclude module: 'geode-core'
   }
   testRuntime(project(':geode-old-versions'))
+
 
   acceptanceTestRuntime(project(':geode-old-versions'))
 
