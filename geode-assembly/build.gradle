@@ -23,7 +23,8 @@ import java.nio.file.Paths
 evaluationDependsOn(":geode-core")
 
 apply plugin: 'distribution'
-apply plugin: 'maven-publish'
+apply from: "${rootDir}/${scriptDir}/publish.gradle"
+
 
 // This subproject's 'publication' is not a jar and should not be constrained to match versions
 // in the geode-all-bom.
@@ -324,17 +325,13 @@ distributions {
   }
 }
 
-distTar.configure {
+tasks.named('distTar').configure {
   compression Compression.GZIP
   extension 'tgz'
 }
 
 
 gradle.taskGraph.whenReady( { graph ->
-  tasks.withType(Jar).each { jarTasks ->
-    distTar.dependsOn(jarTasks)
-  }
-
   tasks.withType(AbstractArchiveTask).findAll {
     it.name.toLowerCase().contains("dist")
   }.each { archive ->

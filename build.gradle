@@ -194,4 +194,9 @@ if (project.hasProperty('askpass')) {
   }
 }
 
-rootProject.clean.dependsOn(rootProject.subprojects*.getTasksByName('clean', true))
+// Explicit chaining of tasks, for composite build consumption
+['clean', 'check', 'test'].each { chainedTask ->
+  rootProject.tasks.named(chainedTask).configure {
+    dependsOn(subprojects*.tasks*.named(chainedTask))
+  }
+}
