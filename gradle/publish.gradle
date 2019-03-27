@@ -1,5 +1,3 @@
-import java.nio.file.Paths
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -87,20 +85,22 @@ publishing {
           // This black magic checks to see if a dependency has the flag ext.optional=true
           // set on it, and if so marks the dependency as optional in the maven pom
           def depMap = project.configurations.compile.dependencies.collectEntries { [it.name, it] }
-          def runtimeConfig = project.configurations.findByName('runtime')
-          if (runtimeConfig) {
-            def runtimeDeps = runtimeConfig.dependencies.collectEntries {
-              [it.name, it]
-            }
-            depMap.putAll(runtimeDeps)
+          def runtimeDeps = project.configurations.runtime.dependencies.collectEntries {
+            [it.name, it]
           }
-          def runtimeOnlyConfig = project.configurations.findByName('runtimeOnly')
-          if (runtimeOnlyConfig) {
-            def runtimeOnlyDeps = runtimeOnlyConfig.dependencies.collectEntries {
-              [it.name, it]
-            }
-            depMap.putAll(runtimeOnlyDeps)
+          depMap.putAll(runtimeDeps)
+          def runtimeOnlyDeps = project.configurations.runtimeOnly.dependencies.collectEntries {
+            [it.name, it]
           }
+          depMap.putAll(runtimeOnlyDeps)
+          def implementationDependencies = project.configurations.implementation.dependencies.collectEntries {
+            [it.name, it]
+          }
+          depMap.putAll(implementationDependencies)
+          def apiDependencies = project.configurations.api.dependencies.collectEntries {
+            [it.name, it]
+          }
+          depMap.putAll(apiDependencies)
           asNode().dependencies.dependency.findAll {
             def dep = depMap.get(it.artifactId.text())
             return dep?.hasProperty('optional') && dep.optional

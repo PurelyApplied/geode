@@ -274,6 +274,7 @@ def libCopySpec = copySpec {
         'geode-core',
         'geode-cq',
         'geode-lucene',
+        'geode-memcached',
         'geode-old-client-support',
         'geode-protobuf',
         'geode-protobuf-messages',
@@ -387,6 +388,7 @@ dependencies {
   geodeArchives project(':geode-connectors')
   geodeArchives project(':geode-core')
   geodeArchives project(':geode-lucene')
+  geodeArchives project(':geode-memcached')
   geodeArchives project(':geode-redis')
   geodeArchives project(':geode-old-client-support')
   geodeArchives project(':geode-protobuf')
