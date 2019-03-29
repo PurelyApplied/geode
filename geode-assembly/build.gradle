@@ -324,9 +324,6 @@ task configureGfshDepsJar(dependsOn: configurations.gfshDependencies.dependencie
   inputs.files {
     configureDepsJar
   }
-  inputs.files {
-    project(':geode-core').webJar
-  }
 
   def output = project.buildDir.toPath().resolve('reports').resolve('gfsh_deps_jar_cp.txt')
   outputs.file {
@@ -334,8 +331,9 @@ task configureGfshDepsJar(dependsOn: configurations.gfshDependencies.dependencie
   }
   doLast {
     def classpath = configureDepsJar.outputs.files.singleFile.text + ' ' +
-      project(':geode-core').webJar.archiveName + ' ' +
-      configurations.gfshDependencies.collect { it.getName() }.flatten().join(' ')
+        configurations.gfshDependencies.collect { it.getName() }.findAll {
+          !it.contains('geode-all-bom')
+        }.flatten().unique().join(' ')
     output.write(classpath)
   }
 }
@@ -402,104 +400,6 @@ task docs(type: Javadoc) {
 
 
 
-CopySpec fullDistributionCopySpec = copySpec {
-  CopySpec extensionsToolsCopySpec = copySpec {
-    into('tools/Extensions')
-
-    from { project(':geode-web').configurations.archives.allArtifacts.files }
-    from { project(':geode-web-api').configurations.archives.allArtifacts.files }
-    from { project(':geode-web-management').configurations.archives.allArtifacts.files }
-
-    exclude '*.jar'
-  }
-
-  CopySpec clientToolsCopySpec = copySpec {
-    into('tools/ClientProtocol')
-
-    from { project(':geode-protobuf-messages').zip.outputs.files }
-  }
-
-  CopySpec pulseToolsCopySpec = copySpec {
-    into('tools/Pulse')
-
-    from { project(':geode-pulse').configurations.archives.allArtifacts.files }
-  }
-
-  CopySpec moduleToolsCopySpec = copySpec {
-    into('tools/Modules')
-
-    from { project(':extensions:geode-modules-assembly').distTcServer }
-    from { project(':extensions:geode-modules-assembly').distTcServer30 }
-    from { project(':extensions:geode-modules-assembly').distTomcat }
-    from { project(':extensions:geode-modules-assembly').distAppServer }
-  }
-
-  CopySpec javadocCopySpec = copySpec {
-    into('javadoc')
-
-    from { docs }
-  }
-
-  CopySpec configDirCopySpec = copySpec {
-    into('config')
-
-    from defaultCacheConfig
-    from defaultDistributionConfig
-    from(project(':geode-core').sourceSets.main.resources.files.find {
-      it.name == 'log4j2.xml'
-    })
-  }
-
-  CopySpec libCopySpec = copySpec {
-    into('lib')
-
-    from {
-      [
-        'geode-common',
-        'geode-connectors',
-        'geode-core',
-        'geode-cq',
-        'geode-lucene',
-        'geode-memcached',
-        'geode-old-client-support',
-        'geode-protobuf',
-        'geode-protobuf-messages',
-        'geode-rebalancer',
-        'geode-wan',
-      ].collect {
-        [
-          project(':'.concat(it)).configurations.runtimeClasspath,
-          project(':'.concat(it)).configurations.archives.allArtifacts.files
-        ]
-      }.flatten()
-    }
-
-    from { configurations.gfshDependencies }
-
-    //These tasks are included as closures (wrapped in {}) because gradle may evaluate
-    //this CopySpec before it evaluates the geode-core build file.
-    from { project(':geode-core').webJar }
-    from { project(':geode-core').raJar }
-    from { project(':geode-core').jcaJar }
-
-    // dependency jars
-    from { depsJar }
-    from { gfshDepsJar }
-  }
-
-  from { rootProject.file('README.md') }
-  from { "${projectDir}/src/main/dist/" }
-
-  with configDirCopySpec
-  with libCopySpec
-
-  with extensionsToolsCopySpec
-  with clientToolsCopySpec
-  with pulseToolsCopySpec
-  with moduleToolsCopySpec
-
-  with javadocCopySpec
-}
 
 distributions {
   main {
@@ -511,6 +411,104 @@ distributions {
       exclude '*.asc'
       exclude '*-sources.jar'
       exclude '*-javadoc.jar'
+
+      CopySpec fullDistributionCopySpec = copySpec {
+        CopySpec extensionsToolsCopySpec = copySpec {
+          into('tools/Extensions')
+
+          from { project(':geode-web').configurations.archives.allArtifacts.files }
+          from { project(':geode-web-api').configurations.archives.allArtifacts.files }
+          from { project(':geode-web-management').configurations.archives.allArtifacts.files }
+
+          exclude '*.jar'
+        }
+
+        CopySpec clientToolsCopySpec = copySpec {
+          into('tools/ClientProtocol')
+
+          from { project(':geode-protobuf-messages').zip.outputs.files }
+        }
+
+        CopySpec pulseToolsCopySpec = copySpec {
+          into('tools/Pulse')
+
+          from { project(':geode-pulse').configurations.archives.allArtifacts.files }
+        }
+
+        CopySpec moduleToolsCopySpec = copySpec {
+          into('tools/Modules')
+
+          from { project(':extensions:geode-modules-assembly').distTcServer }
+          from { project(':extensions:geode-modules-assembly').distTcServer30 }
+          from { project(':extensions:geode-modules-assembly').distTomcat }
+          from { project(':extensions:geode-modules-assembly').distAppServer }
+        }
+
+        CopySpec javadocCopySpec = copySpec {
+          into('javadoc')
+
+          from { docs }
+        }
+
+        CopySpec configDirCopySpec = copySpec {
+          into('config')
+
+          from defaultCacheConfig
+          from defaultDistributionConfig
+          from(project(':geode-core').sourceSets.main.resources.files.find {
+            it.name == 'log4j2.xml'
+          })
+        }
+
+        CopySpec libCopySpec = copySpec {
+          into('lib')
+
+          from {
+            [
+              'geode-common',
+              'geode-connectors',
+              'geode-core',
+              'geode-cq',
+              'geode-lucene',
+              'geode-memcached',
+              'geode-old-client-support',
+              'geode-protobuf',
+              'geode-protobuf-messages',
+              'geode-rebalancer',
+              'geode-wan',
+            ].collect {
+              [
+                project(':'.concat(it)).configurations.runtimeClasspath,
+                project(':'.concat(it)).configurations.archives.allArtifacts.files
+              ]
+            }.flatten()
+          }
+
+          from { configurations.gfshDependencies }
+
+          //These tasks are included as closures (wrapped in {}) because gradle may evaluate
+          //this CopySpec before it evaluates the geode-core build file.
+          from { project(':geode-core').raJar }
+          from { project(':geode-core').jcaJar }
+
+          // dependency jars
+          from { depsJar }
+          from { gfshDepsJar }
+        }
+
+        from { rootProject.file('README.md') }
+        from { "${projectDir}/src/main/dist/" }
+
+        with configDirCopySpec
+        with libCopySpec
+
+        with extensionsToolsCopySpec
+        with clientToolsCopySpec
+        with pulseToolsCopySpec
+        with moduleToolsCopySpec
+
+        with javadocCopySpec
+      }
 
       with fullDistributionCopySpec
     }
