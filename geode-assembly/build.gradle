@@ -31,7 +31,10 @@ project.ext.set('constrainVersionInBom', false)
 project.ext {artifactName = 'apache-geode'}
 
 configurations {
-  compositeTarget
+  compositeTarget {
+    description "Composite builds wishing to consume this apache-geode@tgz artifact must specify \"targetConfiguration = 'compositeTarget'\" for correct composite task dependency detection."
+  }
+
   gfshDependencies
 
   // Configurations used to download and cache web application servers for session module testing
