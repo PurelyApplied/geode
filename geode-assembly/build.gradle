@@ -176,30 +176,37 @@ def cp = {
     .collect { it.jar.archiveName }
 
   // then add all the dependencies of the dependent jars
-  def depJars = configurations.geodeArchives.dependencies.collect {
-    it.dependencyProject.findAll { !(it.name.contains('geode-web') || it.name.contains('geode-pulse')) }
-      .collect { it.configurations.runtimeClasspath.collect { it.getName() }.findAll { !(
-        // exclude mx4j, once the deprecated code is deleted we can remove these entirely
-        it.contains('commons-digester') ||
-        it.contains('commons-modeler') ||
-        it.contains('javax.mail-api') ||
-        it.contains('mx4j') ||
+  def depJars = configurations.archives.dependencies.collect {
+    it.dependencyProject.findAll {
+      !(it.name.contains('geode-web') ||
+        it.name.contains('geode-pulse'))
+    }.collect {
+      it.configurations.runtimeClasspath.collect { it.getName() }.findAll {
+        !(
+          it.contains('geode-all-bom') ||
 
-        // misc jars, these should be removed from the lib dir
-        it.contains('findbugs-annotations') ||
-        it.contains('geode-dependencies') ||
-        it.contains('geode-jca') ||
-        it.contains('geode-web') ||
-        it.contains('gfsh-dependencies') ||
-        it.contains('ra.jar') ||
+          // exclude mx4j, once the deprecated code is deleted we can remove these entirely
+          it.contains('commons-digester') ||
+          it.contains('commons-modeler') ||
+          it.contains('javax.mail-api') ||
+          it.contains('mx4j') ||
 
-        // spring web deps that shouldn't be here either
-        it.contains('spring-aop') ||
-        it.contains('spring-beans') ||
-        it.contains('spring-context') ||
-        it.contains('spring-expression') ||
-        it.contains('spring-web')
-      )}
+          // misc jars, these should be removed from the lib dir
+          it.contains('findbugs-annotations') ||
+          it.contains('geode-dependencies') ||
+          it.contains('geode-jca') ||
+          it.contains('geode-web') ||
+          it.contains('gfsh-dependencies') ||
+          it.contains('ra.jar') ||
+
+          // spring web deps that shouldn't be here either
+          it.contains('spring-aop') ||
+          it.contains('spring-beans') ||
+          it.contains('spring-context') ||
+          it.contains('spring-expression') ||
+          it.contains('spring-web')
+        )
+      }
     }
   }.flatten()
 

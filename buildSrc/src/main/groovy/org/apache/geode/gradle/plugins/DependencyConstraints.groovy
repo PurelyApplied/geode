@@ -32,7 +32,7 @@ class DependencyConstraints implements Plugin<Project> {
     // These versions are consumed beyond the scope of source set dependencies.
 
     // These version numbers are consumed by :geode-modules-assembly:distAppServer filtering
-    // Some of these are referenced above as well
+    // Some of these are referenced below as well
     deps.put("antlr.version", "2.7.7")
     deps.put("commons-io.version", "2.6")
     deps.put("commons-lang3.version", "3.8.1")
@@ -47,8 +47,8 @@ class DependencyConstraints implements Plugin<Project> {
 
     // These version numbers are used in testing various versions of tomcat and are consumed explicitly
     // in will be called explicitly in the relevant extensions module, and respective configurations
-    // in geode-assembly.gradle.  Moreover, dependencyManagement does not seem to place nicely when
-    // specifying @zip in a dependency, in the manner in which we consume them in custom configurations.
+    // in geode-assembly.gradle.  Moreover, dependencyManagement does not seem to play nicely when
+    // specifying @zip in a dependency, the manner in which we consume them in custom configurations.
     // This would possibly be corrected if they were proper source sets.
     deps.put("tomcat6.version", "6.0.37")
     deps.put("tomcat7.version", "7.0.90")
@@ -66,7 +66,6 @@ class DependencyConstraints implements Plugin<Project> {
     deps.put("protobuf-java.version", "3.6.1")
 
     // These versions are referenced in test.gradle, which is aggressively injected into all projects.
-    // This results in brittle behavior compared to dependency-management.gradle"s "opt-in" plugin style.
     deps.put("junit.version", "4.12")
     deps.put("cglib.version", "3.2.9")
     return deps
