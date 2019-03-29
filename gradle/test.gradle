@@ -29,17 +29,13 @@ task combineReports(type: TestReport) {
 }
 
 gradle.taskGraph.whenReady({ graph ->
-  rootProject.subprojects {
-    def testTasks = it.tasks.withType(Test)
-    testTasks.each {
-      rootProject.tasks.getByName('combineReports').reportOn(it)
-    }
-  }
+  tasks.getByName('combineReports').reportOn rootProject.subprojects.collect {
+    it.tasks.withType(Test)
+  }.flatten()
 })
 
 
 subprojects {
-  
   // This configuration might be safely removed once the CategoryWithParameterizedRunnerFactory
   // and associated classes are themselves removed, per GEODE-5606
   configurations {

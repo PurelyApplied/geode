@@ -146,10 +146,9 @@ subprojects {
   }
 
   // If we add more languages to Spotless, add them to 'compileXYZ' trigger below
-  if (project.name != 'geode-assembly') {
-    afterEvaluate {
-      project.tasks['compileJava'].mustRunAfter(spotlessCheck)
-      project.tasks['compileJava'].mustRunAfter(spotlessApply)
-    }
+  afterEvaluate {
+    // Not all projects are java projects.  findByName could return null, so use the null-safe ?. operator
+    project.tasks.findByName('compileJava')?.mustRunAfter(spotlessCheck)
+    project.tasks.findByName('compileJava')?.mustRunAfter(spotlessApply)
   }
 }
