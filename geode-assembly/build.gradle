@@ -16,7 +16,7 @@
  */
 
 apply from: "${rootDir}/${scriptDir}/standard-subproject-configuration.gradle"
-
+apply plugin: 'jar-check'
 
 import org.apache.geode.gradle.plugins.DependencyConstraints
 
@@ -640,4 +640,9 @@ task dumpInstalledJars(dependsOn: installDist) {
       }
     }
   }
+}
+
+jarCheck {
+  partOfCheck true
+  checkAllJarTasks()
 }
