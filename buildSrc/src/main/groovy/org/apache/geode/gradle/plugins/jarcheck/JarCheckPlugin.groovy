@@ -170,14 +170,13 @@ class JarCheckPlugin implements Plugin<Project> {
     }
   }
 
-  private void createExpectationStubIfMissing(File expectationFile, Project project, String updateContentTaskname) {
+  private static void createExpectationStubIfMissing(File expectationFile, Project project, String updateContentTaskname) {
     if (!expectationFile.exists()) {
-      project.logger.warn("Expected jar-check file '${expectationFile}' does not exist.  Run '${updateContentTaskname}' to initialize.")
+      project.logger.warn("Expected jar-check file '${expectationFile}' does not exist.  Creating empty file.  Run '${updateContentTaskname}' to initialize.")
       try {
-        println "can write? [${expectationFile.parentFile.canWrite()}]"
         expectationFile.write("")
-      } catch (IOException e) {
-        project.logger.error("Could not initialize '${expectationFile}'.  Expect failures with message '... expectation does not exist.'")
+      } catch (ignored) {
+        project.logger.error("Could not create empty file '${expectationFile}'.  Expect failures with message \"... 'expectation' does not exist.\"")
       }
     }
   }

@@ -31,14 +31,14 @@ class ExamineJarManifestClasspathTask extends JarExaminationTasks {
 
   Set<String> extractClasspathFromManifest(File manifestPath) {
     if (!manifestPath.exists()) {
-      logger.warn("Expected manifest '${manifestPath.absolutePath}' not found.  Using empty classpath in check.")
+      logger.debug("Expected manifest '${manifestPath.absolutePath}' not found.  Using empty classpath.")
       return [] as Set<String>
     }
 
     def manifest = new Manifest(manifestPath.newInputStream())
     def classpathValue = manifest.getMainAttributes().getValue('Class-Path')
     if (classpathValue == null) {
-      logger.warn("Manifest file did not contain a Class-Path.  Assuming empty dependency set.")
+      logger.debug("Manifest file did not contain a Class-Path.  Using empty classpath.")
       return [] as Set<String>
     }
     return classpathValue.split() as Set<String>
@@ -52,7 +52,7 @@ class ExamineJarManifestClasspathTask extends JarExaminationTasks {
     FileTree jarTree = project.zipTree(jarFile)
     Object manifest = jarTree.find { it.path.endsWith('/META-INF/MANIFEST.MF') }
     if (manifest == null) {
-      println "Jar file ${jarFile} does not appear to have a manifest."
+      println "Jar file ${jarFile} does not appear to have a manifest.  Using empty classpath."
       outputFile.write("")
       return
     }
