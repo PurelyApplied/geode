@@ -1,0 +1,11 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+org/apache/geode/annotations/Experimental.class
+org/apache/geode/annotations/Immutable.class
+org/apache/geode/annotations/VisibleForTesting.class
+org/apache/geode/annotations/internal/MakeImmutable.class
+org/apache/geode/annotations/internal/MakeNotStatic.class
+org/apache/geode/annotations/internal/MutableForTesting.class
+org/apache/geode/lang/Identifiable.class
+org/apache/geode/util/internal/GeodeJsonMapper.class
