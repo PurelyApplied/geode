@@ -15,14 +15,15 @@
 
 package org.apache.geode.gradle.plugins.jarcheck
 
-import org.apache.geode.gradle.plugins.jarcheck.tasks.ListFileComparisonTask
 import org.apache.geode.gradle.plugins.jarcheck.tasks.ExamineJarContentTask
 import org.apache.geode.gradle.plugins.jarcheck.tasks.ExamineJarManifestClasspathTask
+import org.apache.geode.gradle.plugins.jarcheck.tasks.ListFileComparisonTask
 import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.BasePlugin
 import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.Sync
 
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -49,7 +50,8 @@ class JarCheckPlugin implements Plugin<Project> {
       description "This is a synthetic task to perform all jar checks configured with the JarCheck plugin."
     }
 
-    project.tasks.register(ROOT_UPDATE_TASK_NAME) {
+    project.tasks.register(ROOT_UPDATE_TASK_NAME, Sync) {
+      into "${project.projectDir}/${EXPECTATIONS_BUILD_DIR}"
       group "verification"
       description "This is a synthetic task to perform all jar expectation updates configured with the JarCheck plugin."
     }
@@ -166,7 +168,13 @@ class JarCheckPlugin implements Plugin<Project> {
       dependsOn checkTaskname
     }
     project.tasks.named(ROOT_UPDATE_TASK_NAME).configure {
-      dependsOn updateTaskname
+      with project.copySpec {
+        from actualFile.parent
+        include actualFile.name
+        rename actualFile.name, expectationFile.name
+      }
+
+      inputs.files { project.tasks.named(examineTaskname) }
     }
   }
 
