@@ -48,20 +48,20 @@ class ListFileComparisonTask extends DefaultTask {
     Set<String> extraFiles = actualFiles - expectedFiles
     Set<String> missingFiles = expectedFiles - actualFiles
 
-    if (extraFiles.size() == 0 && missingFiles.size() == 0){
+    if (extraFiles.size() == 0 && missingFiles.size() == 0) {
       report.write("Actual matches expectation.\n")
       return
     }
 
     report.write("Actual does not match expectation...\n")
 
-    if (extraFiles.size() > 0 ) {
+    if (extraFiles.size() > 0) {
       report.withWriterAppend { out ->
         out.println("The following files were found but not expected:")
         out.println("  " + extraFiles.sort().join("\n  "))
       }
     }
-    if (missingFiles.size() > 0 ) {
+    if (missingFiles.size() > 0) {
       report.withWriterAppend { out ->
         out.println("The following files expected but missing:")
         out.println("  " + missingFiles.sort().join("\n  "))

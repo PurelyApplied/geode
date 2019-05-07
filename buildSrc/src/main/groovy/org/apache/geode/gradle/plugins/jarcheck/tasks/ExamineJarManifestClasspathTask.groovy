@@ -37,7 +37,7 @@ class ExamineJarManifestClasspathTask extends JarExaminationTasks {
 
     def manifest = new Manifest(manifestPath.newInputStream())
     def classpathValue = manifest.getMainAttributes().getValue('Class-Path')
-    if (classpathValue == null ) {
+    if (classpathValue == null) {
       logger.warn("Manifest file did not contain a Class-Path.  Assuming empty dependency set.")
       return [] as Set<String>
     }

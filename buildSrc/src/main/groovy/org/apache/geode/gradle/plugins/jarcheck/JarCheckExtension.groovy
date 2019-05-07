@@ -27,6 +27,7 @@ class JarCheckExtension {
   final Project project
 
   Map<File, JarCheckConfiguration> jarsToCheck = [:]
+
   JarCheckExtension(Project project) {
     this.project = project
   }
@@ -54,7 +55,7 @@ class JarCheckExtension {
     implicitlyCheckAll = false
     File jarFile
     Task jarCreator
-    switch(o.class) {
+    switch (o.class) {
       case TaskProvider:
         jarFile = (o as TaskProvider<Task>).get().outputs.files.singleFile
         jarCreator = (o as TaskProvider<Task>).get()
