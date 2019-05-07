@@ -1,0 +1,9 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+expected-pom.xml
+org/apache/geode/management/internal/cli/commands/StartLocatorCommandTest.class
+org/apache/geode/management/internal/cli/commands/StartLocatorCommandWorkingDirectoryTest.class
+org/apache/geode/management/internal/cli/commands/StartServerCommandTest.class
+org/apache/geode/management/internal/cli/commands/StartServerCommandWorkingDirectoryTest.class
+org/apache/geode/test/junit/rules/GfshRuleTest.class

@@ -1,0 +1,9 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+META-INF/services/org.apache.geode.internal.cache.CacheService
+com/gemstone/gemfire/GemFireException.class
+com/gemstone/gemfire/OldClientSupportProvider.class
+com/gemstone/gemfire/cache/execute/EmtpyRegionFunctionException.class
+com/gemstone/gemfire/cache/execute/FunctionException.class
+com/gemstone/gemfire/cache/execute/FunctionInvocationTargetException.class

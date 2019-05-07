@@ -1,0 +1,9 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+expected-pom.xml
+org/apache/geode/internal/cache/wan/AckReaderThreadJUnitTest.class
+org/apache/geode/internal/cache/wan/GatewayReceiverFactoryImplTest.class
+org/apache/geode/internal/cache/wan/GatewayReceiverImplTest.class
+org/apache/geode/internal/cache/wan/GatewaySenderEventRemoteDispatcherIntegrationTest.class
+org/apache/geode/internal/cache/wan/GatewaySenderEventRemoteDispatcherJUnitTest.class

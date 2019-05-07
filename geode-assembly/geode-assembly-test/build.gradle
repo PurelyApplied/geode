@@ -16,9 +16,7 @@
  */
 
 apply from: "${rootDir}/${scriptDir}/standard-subproject-configuration.gradle"
-
-
-
+apply plugin: 'jar-check'
 
 dependencies {
   compile(platform(project(':boms:geode-all-bom')))

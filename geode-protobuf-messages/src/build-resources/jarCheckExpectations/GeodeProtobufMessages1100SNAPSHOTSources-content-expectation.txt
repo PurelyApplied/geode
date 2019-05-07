@@ -1,0 +1,10 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+org/apache/geode/internal/protocol/protobuf/ProtocolVersion.java
+org/apache/geode/internal/protocol/protobuf/v1/BasicTypes.java
+org/apache/geode/internal/protocol/protobuf/v1/ClientProtocol.java
+org/apache/geode/internal/protocol/protobuf/v1/ConnectionAPI.java
+org/apache/geode/internal/protocol/protobuf/v1/FunctionAPI.java
+org/apache/geode/internal/protocol/protobuf/v1/LocatorAPI.java
+org/apache/geode/internal/protocol/protobuf/v1/RegionAPI.java

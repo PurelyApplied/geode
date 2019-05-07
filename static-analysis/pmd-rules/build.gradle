@@ -16,6 +16,7 @@
  */
 
 apply from: "${rootDir}/${scriptDir}/standard-subproject-configuration.gradle"
+apply plugin: 'jar-check'
 
 dependencies {
     testCompile(group: 'net.sourceforge.pmd', name: 'pmd-test', version: '6.11.0')

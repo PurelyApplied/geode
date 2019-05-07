@@ -1,0 +1,14 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+org/apache/geode/management/internal/rest/ManagementLoggingFilter.java
+org/apache/geode/management/internal/rest/controllers/AbstractManagementController.java
+org/apache/geode/management/internal/rest/controllers/ManagementControllerAdvice.java
+org/apache/geode/management/internal/rest/controllers/MemberManagementController.java
+org/apache/geode/management/internal/rest/controllers/PingManagementController.java
+org/apache/geode/management/internal/rest/controllers/RegionManagementController.java
+org/apache/geode/management/internal/rest/converter/CustomMappingJackson2HttpMessageConverter.java
+org/apache/geode/management/internal/rest/security/GeodeAuthenticationProvider.java
+org/apache/geode/management/internal/rest/security/RestSecurityConfiguration.java
+org/apache/geode/management/internal/rest/security/RestSecurityService.java
+org/apache/geode/management/internal/rest/swagger/SwaggerConfig.java

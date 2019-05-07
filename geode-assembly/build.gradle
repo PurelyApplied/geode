@@ -641,15 +641,3 @@ task dumpInstalledJars(dependsOn: installDist) {
     }
   }
 }
-
-jarCheck {
-  partOfCheck true
-  checkAllJarTasks()
-
-  check(tasks.named("depsJar")) {
-    checkContent = false
-  }
-  check(tasks.named("gfshDepsJar")) {
-    checkContent = false
-  }
-}

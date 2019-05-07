@@ -1,0 +1,8 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+com/gemstone/gemfire/GemFireException.java
+com/gemstone/gemfire/OldClientSupportProvider.java
+com/gemstone/gemfire/cache/execute/EmtpyRegionFunctionException.java
+com/gemstone/gemfire/cache/execute/FunctionException.java
+com/gemstone/gemfire/cache/execute/FunctionInvocationTargetException.java

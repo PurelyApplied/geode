@@ -1,0 +1,10 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+expected-pom.xml
+org/apache/geode/cache/query/internal/cq/CqServiceImplJUnitTest.class
+org/apache/geode/cache/query/internal/cq/CqServiceUnitTest.class
+org/apache/geode/internal/cache/tier/sockets/command/CloseCQTest.class
+org/apache/geode/internal/cache/tier/sockets/command/ExecuteCQ61Test.class
+org/apache/geode/internal/cache/tier/sockets/command/StopCQTest.class
+org/apache/geode/test/dunit/rules/CQUnitTestRule.class

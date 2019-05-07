@@ -1,0 +1,10 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+expected-pom.xml
+org/apache/geode/security/templates/PKCSPrincipalTest.class
+org/apache/geode/security/templates/UsernamePrincipalTest.class
+org/apache/geode/test/dunit/internal/MethodInvokerTest.class
+org/apache/geode/test/dunit/internal/VMEventNotifierTest$Notification.class
+org/apache/geode/test/dunit/internal/VMEventNotifierTest$NotificationParams.class
+org/apache/geode/test/dunit/internal/VMEventNotifierTest.class

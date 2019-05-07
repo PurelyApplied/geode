@@ -1,0 +1,6 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+expected-pom.xml
+org/apache/geode/cache/configuration/CacheElementJsonMappingTest.class
+org/apache/geode/cache/configuration/CacheElementTest.class

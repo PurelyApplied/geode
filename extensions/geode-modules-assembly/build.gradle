@@ -15,24 +15,24 @@
  * limitations under the License.
  */
 
+import org.apache.geode.gradle.plugins.DependencyConstraints
+import org.apache.tools.ant.filters.ReplaceTokens
+
 evaluationDependsOn(':extensions:geode-modules')
 evaluationDependsOn(':extensions:geode-modules-tomcat7')
 evaluationDependsOn(':extensions:geode-modules-tomcat8')
 evaluationDependsOn(':extensions:geode-modules-tomcat9')
 evaluationDependsOn(':extensions:geode-modules-session')
 evaluationDependsOn(':extensions:geode-modules-session-internal')
-  
-  
-apply from: "${rootDir}/${scriptDir}/standard-subproject-configuration.gradle"
 
-import org.apache.geode.gradle.plugins.DependencyConstraints
-import org.apache.tools.ant.filters.ReplaceTokens
+apply from: "${rootDir}/${scriptDir}/standard-subproject-configuration.gradle"
+apply plugin: 'jar-check'
+
 apply plugin: 'maven-publish'
 
 configurations {
   slf4jDeps
 }
-
 
 dependencies {
   slf4jDeps 'org.slf4j:slf4j-api:' + DependencyConstraints.get('slf4j-api.version')

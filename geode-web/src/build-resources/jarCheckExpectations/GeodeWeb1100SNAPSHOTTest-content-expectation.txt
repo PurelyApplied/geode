@@ -1,0 +1,8 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+expected-pom.xml
+org/apache/geode/management/internal/web/controllers/support/LoginHandlerInterceptorRequestHeaderTest.class
+org/apache/geode/management/internal/web/controllers/support/LoginHandlerInterceptorTest$RequestBuilder.class
+org/apache/geode/management/internal/web/controllers/support/LoginHandlerInterceptorTest.class
+org/apache/geode/management/internal/web/domain/QueryParameterSourceJUnitTest.class

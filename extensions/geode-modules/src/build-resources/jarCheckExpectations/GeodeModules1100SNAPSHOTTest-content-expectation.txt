@@ -1,0 +1,10 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+log4j.properties
+org/apache/geode/modules/Event.hbm.xml
+org/apache/geode/modules/Person.hbm.xml
+org/apache/geode/modules/util/ClassLoaderObjectInputStreamTest$GeneratingClassLoader.class
+org/apache/geode/modules/util/ClassLoaderObjectInputStreamTest.class
+org/apache/geode/modules/util/CreateRegionFunctionJUnitTest$1.class
+org/apache/geode/modules/util/CreateRegionFunctionJUnitTest.class

@@ -1,0 +1,8 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+org/apache/geode/internal/protocol/TestExecutionContext.class
+org/apache/geode/internal/protocol/protobuf/v1/MessageUtil.class
+org/apache/geode/internal/protocol/protobuf/v1/ProtobufRequestUtilities.class
+org/apache/geode/internal/protocol/protobuf/v1/TestSerializeAllSerializer.class
+org/apache/geode/internal/protocol/protobuf/v1/TestValueSerializer.class

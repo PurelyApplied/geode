@@ -16,11 +16,9 @@
  */
 
 apply from: "${rootDir}/${scriptDir}/standard-subproject-configuration.gradle"
-
 apply plugin: 'war'
-
 apply from: "${project.projectDir}/../gradle/publish.gradle"
-
+apply plugin: 'jar-check'
 
 dependencies {
   api(platform(project(':boms:geode-all-bom')))

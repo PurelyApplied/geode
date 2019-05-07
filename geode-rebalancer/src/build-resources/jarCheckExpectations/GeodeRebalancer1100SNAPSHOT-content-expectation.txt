@@ -1,0 +1,15 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+org/apache/geode/cache/util/AutoBalancer$1.class
+org/apache/geode/cache/util/AutoBalancer$AuditScheduler.class
+org/apache/geode/cache/util/AutoBalancer$CacheOperationFacade.class
+org/apache/geode/cache/util/AutoBalancer$CronScheduler$1.class
+org/apache/geode/cache/util/AutoBalancer$CronScheduler$2.class
+org/apache/geode/cache/util/AutoBalancer$CronScheduler.class
+org/apache/geode/cache/util/AutoBalancer$GeodeCacheFacade.class
+org/apache/geode/cache/util/AutoBalancer$OOBAuditor.class
+org/apache/geode/cache/util/AutoBalancer$SizeBasedOOBAuditor.class
+org/apache/geode/cache/util/AutoBalancer$SystemClockTimeProvider.class
+org/apache/geode/cache/util/AutoBalancer$TimeProvider.class
+org/apache/geode/cache/util/AutoBalancer.class

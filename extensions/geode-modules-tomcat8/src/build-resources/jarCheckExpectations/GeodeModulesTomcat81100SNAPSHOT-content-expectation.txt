@@ -1,0 +1,5 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+org/apache/geode/modules/session/catalina/DeltaSession8.class
+org/apache/geode/modules/session/catalina/Tomcat8DeltaSessionManager.class

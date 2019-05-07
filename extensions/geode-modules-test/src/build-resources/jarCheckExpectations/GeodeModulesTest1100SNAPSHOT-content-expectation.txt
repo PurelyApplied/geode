@@ -1,0 +1,16 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+org/apache/geode/modules/session/Callback.class
+org/apache/geode/modules/session/CommandServlet$1.class
+org/apache/geode/modules/session/CommandServlet.class
+org/apache/geode/modules/session/EmbeddedTomcat$1.class
+org/apache/geode/modules/session/EmbeddedTomcat.class
+org/apache/geode/modules/session/QueryCommand.class
+org/apache/geode/modules/session/TestSessionsBase$1.class
+org/apache/geode/modules/session/TestSessionsBase$2.class
+org/apache/geode/modules/session/TestSessionsBase$3.class
+org/apache/geode/modules/session/TestSessionsBase$4.class
+org/apache/geode/modules/session/TestSessionsBase$5.class
+org/apache/geode/modules/session/TestSessionsBase$6.class
+org/apache/geode/modules/session/TestSessionsBase.class

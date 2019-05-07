@@ -1,5 +1,3 @@
-import java.nio.file.Paths
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,7 +15,10 @@ import java.nio.file.Paths
  * limitations under the License.
  */
 
+import java.nio.file.Paths
+
 apply from: "${rootDir}/${scriptDir}/standard-subproject-configuration.gradle"
+apply plugin: 'jar-check'
 
 project.ext.installs = new Properties()
 project.ext.versions = new Properties()

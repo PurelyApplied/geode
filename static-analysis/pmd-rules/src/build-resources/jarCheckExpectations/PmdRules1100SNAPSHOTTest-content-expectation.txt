@@ -1,0 +1,7 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+org/apache/geode/pmd/StaticFieldsMustBeFinalTest.class
+org/apache/geode/pmd/StaticFieldsMustBeImmutableTest.class
+org/apache/geode/pmd/xml/StaticFieldsMustBeFinal.xml
+org/apache/geode/pmd/xml/StaticFieldsMustBeImmutable.xml

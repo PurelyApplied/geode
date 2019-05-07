@@ -1,0 +1,10 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+org/apache/geode/management/internal/web/controllers/AbstractCommandsController.java
+org/apache/geode/management/internal/web/controllers/ShellCommandsController.java
+org/apache/geode/management/internal/web/controllers/support/LoginHandlerInterceptor.java
+org/apache/geode/management/internal/web/http/converter/ServerSerializableObjectHttpMessageConverter.java
+org/apache/geode/management/internal/web/io/MultipartFileAdapter.java
+org/apache/geode/management/internal/web/io/MultipartFileResourceAdapter.java
+org/apache/geode/management/internal/web/util/UriUtils.java

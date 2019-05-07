@@ -1,0 +1,9 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+geodepmd.xml
+org/apache/geode/pmd/Annotations.class
+org/apache/geode/pmd/StaticFieldsMustBeFinal.class
+org/apache/geode/pmd/StaticFieldsMustBeImmutable.class
+org/apache/geode/pmd/staticfinal.xml
+org/apache/geode/pmd/staticimmutable.xml

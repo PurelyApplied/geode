@@ -30,8 +30,8 @@ import java.nio.file.Paths
 class JarCheckPlugin implements Plugin<Project> {
 
   static final String EXTENSION_NAME = "jarCheck"
-  static final String ROOT_CHECK_TASK_NAME = "doJarChecks"
-  static final String ROOT_UPDATE_TASK_NAME = "updateJarCheckExpectations"
+  static final String ROOT_CHECK_TASK_NAME = "jarCheckAll"
+  static final String ROOT_UPDATE_TASK_NAME = "jarCheckUpdateAll"
 
   static final String EXPECTATIONS_BUILD_DIR = "src/build-resources/jarCheckExpectations"
 
@@ -75,6 +75,10 @@ class JarCheckPlugin implements Plugin<Project> {
 
 
   void createTasks(Project project) {
+    if (extension.implicitlyCheckAll) {
+      extension.checkAllJarTasks()
+    }
+
     Path expectationDir = Paths.get("${project.projectDir}/${EXPECTATIONS_BUILD_DIR}")
     Path workingBuildDir = Paths.get("${project.buildDir}/${EXTENSION_NAME}")
     extension.jarsToCheck.each { File jarFile, JarCheckConfiguration config ->

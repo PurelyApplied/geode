@@ -21,7 +21,8 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
 
 class JarCheckExtension {
-  boolean makePartOfCheck = false
+  boolean makePartOfCheck = true
+  boolean implicitlyCheckAll = true // disabled if any explicit configuration is provided.
 
   final Project project
 
@@ -35,12 +36,14 @@ class JarCheckExtension {
   }
 
   void checkAllJarTasks() {
+    implicitlyCheckAll = false
     project.tasks.withType(Jar).each { jarTask ->
       check(jarTask)
     }
   }
 
   void check(Object o) {
+    implicitlyCheckAll = false
     check(o, {
       checkContent = true
       checkManifestClasspath = true
@@ -48,6 +51,7 @@ class JarCheckExtension {
   }
 
   void check(Object o, Closure<JarCheckConfiguration> configClosure) {
+    implicitlyCheckAll = false
     File jarFile
     Task jarCreator
     switch(o.class) {
@@ -67,7 +71,6 @@ class JarCheckExtension {
         jarFile = project.file(o)
         jarCreator = null
     }
-
 
     JarCheckConfiguration config = project.configure(new JarCheckConfiguration(), configClosure) as JarCheckConfiguration
     config.jarCreator = jarCreator

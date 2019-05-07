@@ -1,0 +1,14 @@
+META-INF/LICENSE
+META-INF/MANIFEST.MF
+META-INF/NOTICE
+WEB-INF/classes/org/apache/geode/modules/session/CommandServlet$1.class
+WEB-INF/classes/org/apache/geode/modules/session/CommandServlet.class
+WEB-INF/classes/org/apache/geode/modules/session/ListenerStoredInSessionContext.class
+WEB-INF/classes/org/apache/geode/modules/session/QueryCommand.class
+WEB-INF/classes/org/apache/geode/modules/session/SessionCountingListener.class
+WEB-INF/classes/org/apache/geode/modules/session/functions/GetMaxInactiveInterval.class
+WEB-INF/classes/org/apache/geode/modules/session/functions/GetSessionCount.class
+WEB-INF/classes/org/apache/geode/modules/session/functions/GetSessionCreatedCount.class
+WEB-INF/classes/org/apache/geode/modules/session/functions/GetSessionDestroyedCount.class
+WEB-INF/lib/javax.servlet-api-3.1.0.jar
+WEB-INF/web.xml
