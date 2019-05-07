@@ -81,6 +81,10 @@ class JarCheckPlugin implements Plugin<Project> {
 
     Path expectationDir = Paths.get("${project.projectDir}/${EXPECTATIONS_BUILD_DIR}")
     Path workingBuildDir = Paths.get("${project.buildDir}/${EXTENSION_NAME}")
+
+    if (!expectationDir.toFile().exists()) {
+      expectationDir.toFile().mkdirs()
+    }
     extension.jarsToCheck.each { File jarFile, JarCheckConfiguration config ->
       String jarTaskNamePiece = jarFilenameToTaskName(jarFile)
       project.logger.debug("Creating check tasks for sanitized task name piece: ${jarTaskNamePiece}...")
@@ -106,6 +110,16 @@ class JarCheckPlugin implements Plugin<Project> {
         File actualFile = workingBuildDir.resolve("${jarTaskNamePiece}-content-actual.txt").toFile()
         File reportFile = workingBuildDir.resolve("${jarTaskNamePiece}-content-report.txt").toFile()
 
+        if (!expectationFile.exists()) {
+          project.logger.warn("Expected jar-check file '${expectationFile}' does not exist.  Run '${updateContentTaskname}' to initialize.")
+          try {
+            println "can write? [${expectationFile.parentFile.canWrite()}]"
+            expectationFile.write("")
+          } catch (IOException e) {
+            project.logger.error("Could not initialize '${expectationFile}'.  Expect failures with message '... expectation does not exist.'")
+          }
+        }
+
         project.tasks.register(examineContentTaskname, ExamineJarContentTask) {
           checks jarFile
           outputFile = actualFile
@@ -128,6 +142,7 @@ class JarCheckPlugin implements Plugin<Project> {
           actual = actualFile
           expectation = expectationFile
           report = reportFile
+          correspondingUpdateTaskProvider = project.tasks.named(updateContentTaskname)
 
           inputs.files { project.tasks.named(examineContentTaskname) }
           inputs.files { expectationFile }
@@ -145,16 +160,26 @@ class JarCheckPlugin implements Plugin<Project> {
       if (config.checkManifestClasspath) {
         project.logger.debug("Adding MANIFEST CLASSPATH checks for ${jarFile}")
 
-        String examineContentTaskname = "examine${jarTaskNamePiece}ManifestClasspath"
-        String checkContentTaskname = "check${jarTaskNamePiece}ManifestClasspath"
-        String updateContentTaskname = "update${jarTaskNamePiece}ExpectedManifestClasspath"
+        String examineManifestTaskname = "examine${jarTaskNamePiece}ManifestClasspath"
+        String checkManifestTaskname = "check${jarTaskNamePiece}ManifestClasspath"
+        String updateManifestTaskname = "update${jarTaskNamePiece}ExpectedManifestClasspath"
 
         File expectationFile = expectationDir.resolve("${jarTaskNamePiece}-manifest-classpath-expectation.txt").toFile()
         File actualFile = workingBuildDir.resolve("${jarTaskNamePiece}-manifest-classpath-actual.txt").toFile()
         File reportFile = workingBuildDir.resolve("${jarTaskNamePiece}-manifest-classpath-report.txt").toFile()
 
+        if (!expectationFile.exists()) {
+          project.logger.warn("Expected jar-check file '${expectationFile}' does not exist.  Run '${updateManifestTaskname}' to initialize.")
+          try {
+            println "can write? [${expectationFile.parentFile.canWrite()}]"
+            expectationFile.write("")
+          } catch (IOException e) {
+            project.logger.error("Could not initialize '${expectationFile}'.  Expect failures with message '... expectation does not exist.'")
+          }
+        }
 
-        project.tasks.register(examineContentTaskname, ExamineJarManifestClasspathTask) {
+
+        project.tasks.register(examineManifestTaskname, ExamineJarManifestClasspathTask) {
           checks jarFile
           outputFile = actualFile
 
@@ -163,30 +188,31 @@ class JarCheckPlugin implements Plugin<Project> {
           }
         }
 
-        project.tasks.register(updateContentTaskname, Copy) {
+        project.tasks.register(updateManifestTaskname, Copy) {
           from actualFile.parent
           into expectationFile.parent
           include actualFile.name
           rename actualFile.name, expectationFile.name
 
-          inputs.files { project.tasks.named(examineContentTaskname) }
+          inputs.files { project.tasks.named(examineManifestTaskname) }
         }
 
-        project.tasks.register(checkContentTaskname, ListFileComparisonTask) {
+        project.tasks.register(checkManifestTaskname, ListFileComparisonTask) {
           actual = actualFile
           expectation = expectationFile
           report = reportFile
+          correspondingUpdateTaskProvider = project.tasks.named(updateManifestTaskname)
 
-          inputs.files { project.tasks.named(examineContentTaskname) }
+          inputs.files { project.tasks.named(examineManifestTaskname) }
           inputs.files { expectationFile }
-          mustRunAfter { project.tasks.named(updateContentTaskname) }
+          mustRunAfter { project.tasks.named(updateManifestTaskname) }
         }
 
         project.tasks.named(ROOT_CHECK_TASK_NAME).configure {
-          dependsOn checkContentTaskname
+          dependsOn checkManifestTaskname
         }
         project.tasks.named(ROOT_UPDATE_TASK_NAME).configure {
-          dependsOn updateContentTaskname
+          dependsOn updateManifestTaskname
         }
       }
     }

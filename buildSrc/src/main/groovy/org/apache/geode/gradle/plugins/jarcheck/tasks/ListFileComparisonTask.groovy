@@ -17,9 +17,11 @@ package org.apache.geode.gradle.plugins.jarcheck.tasks
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.Task
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.TaskProvider
 
 class ListFileComparisonTask extends DefaultTask {
   @InputFile
@@ -30,6 +32,8 @@ class ListFileComparisonTask extends DefaultTask {
 
   @OutputFile
   File report
+
+  TaskProvider<Task> correspondingUpdateTaskProvider = null
 
   ListFileComparisonTask() {
     setGroup('verification')
@@ -61,6 +65,12 @@ class ListFileComparisonTask extends DefaultTask {
       report.withWriterAppend { out ->
         out.println("The following files expected but missing:")
         out.println("  " + missingFiles.sort().join("\n  "))
+      }
+    }
+
+    if (null != correspondingUpdateTaskProvider) {
+      report.withWriterAppend { out ->
+        out.println("If the above changes are intentional, run '${correspondingUpdateTaskProvider.get().path}' to update baseline.")
       }
     }
 
