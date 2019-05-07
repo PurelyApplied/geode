@@ -1,10 +1,3 @@
-package org.apache.geode.gradle.plugins.jarcheck
-
-import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.tasks.TaskProvider
-import org.gradle.api.tasks.bundling.Jar
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
  * agreements. See the NOTICE file distributed with this work for additional information regarding
@@ -20,14 +13,15 @@ import org.gradle.api.tasks.bundling.Jar
  * the License.
  */
 
+package org.apache.geode.gradle.plugins.jarcheck
+
+import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.bundling.Jar
+
 class JarCheckExtension {
   boolean makePartOfCheck = false
-
-  class JarCheckConfiguration {
-    boolean checkContent = true
-    boolean checkManifestClasspath = true
-    Task jarCreator = null
-  }
 
   final Project project
 
@@ -37,12 +31,12 @@ class JarCheckExtension {
   }
 
   void partOfCheck(boolean doIt) {
-    makePartOfCheck = doIt
+    this.makePartOfCheck = doIt
   }
 
   void checkAllJarTasks() {
     project.tasks.withType(Jar).each { jarTask ->
-      check jarTask
+      check(jarTask)
     }
   }
 

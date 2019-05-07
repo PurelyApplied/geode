@@ -17,10 +17,12 @@
 
 apply plugin: "org.nosphere.apache.rat"
 
+import java.nio.file.Paths
+
 rat {
   inputDir = rootDir
 
-  excludes = [
+  excludes = Paths.get("${rootDir}").resolve('.gitignore').toFile().text.trim().split("\n").toList() + [
     // git
     '.git/**',
     '**/.gitignore',

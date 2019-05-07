@@ -15,7 +15,6 @@
 
 package org.apache.geode.gradle.plugins.jarcheck
 
-import org.apache.geode.gradle.plugins.jarcheck.JarCheckExtension.JarCheckConfiguration
 import org.apache.geode.gradle.plugins.jarcheck.tasks.ListFileComparisonTask
 import org.apache.geode.gradle.plugins.jarcheck.tasks.ExamineJarContentTask
 import org.apache.geode.gradle.plugins.jarcheck.tasks.ExamineJarManifestClasspathTask
@@ -34,6 +33,7 @@ class JarCheckPlugin implements Plugin<Project> {
   static final String ROOT_CHECK_TASK_NAME = "doJarChecks"
   static final String ROOT_UPDATE_TASK_NAME = "updateJarCheckExpectations"
 
+  static final String EXPECTATIONS_BUILD_DIR = "src/build-resources/jarCheckExpectations"
 
   JarCheckExtension extension
 
@@ -55,8 +55,10 @@ class JarCheckPlugin implements Plugin<Project> {
     // setup the extension
     extension = project.getExtensions().create(EXTENSION_NAME, JarCheckExtension.class, project)
 
-    project.afterEvaluate( { createTasks(project) } as Action<Project>)
-    project.afterEvaluate( { hookIntoCheckIfRequested(project) } as Action<Project>)
+    project.afterEvaluate( {
+      createTasks(project)
+      hookIntoCheckIfRequested(project)
+    } as Action<Project>)
   }
 
   static String jarFilenameToTaskName(File jarFile) {
@@ -73,15 +75,11 @@ class JarCheckPlugin implements Plugin<Project> {
 
 
   void createTasks(Project project) {
-    Path expectationPath = Paths.get("${project.projectDir}/src/test/resources/expectations")
+    Path expectationDir = Paths.get("${project.projectDir}/${EXPECTATIONS_BUILD_DIR}")
     Path workingBuildDir = Paths.get("${project.buildDir}/${EXTENSION_NAME}")
     extension.jarsToCheck.each { File jarFile, JarCheckConfiguration config ->
-      println "Checking jarFile ${jarFile}..."
-      println "Check Content: ${config.checkContent}"
-      println "Check Manifest: ${config.checkManifestClasspath}"
-
       String jarTaskNamePiece = jarFilenameToTaskName(jarFile)
-      println "Sanitized task name piece: ${jarTaskNamePiece}"
+      project.logger.debug("Creating check tasks for sanitized task name piece: ${jarTaskNamePiece}...")
 
       if (seenJarNamePieces.contains(jarTaskNamePiece)) {
         throw new IllegalArgumentException(
@@ -91,17 +89,16 @@ class JarCheckPlugin implements Plugin<Project> {
                 "Tasks names cannot be inferred when similarly-named jars exist.  " +
                 "Resolve this conflict or configure jar checking tasks directly.")
       }
-
       seenJarNamePieces.add(jarTaskNamePiece)
 
       if (config.checkContent) {
-        println "Adding CONTENT checks for ${jarFile}"
+        project.logger.debug("Adding CONTENT checks for ${jarFile}")
 
         String examineContentTaskname = "examine${jarTaskNamePiece}Content"
         String checkContentTaskname = "check${jarTaskNamePiece}Content"
         String updateContentTaskname = "update${jarTaskNamePiece}ExpectedContent"
 
-        File expectationFile = expectationPath.resolve("${jarTaskNamePiece}-content-expectation.txt").toFile()
+        File expectationFile = expectationDir.resolve("${jarTaskNamePiece}-content-expectation.txt").toFile()
         File actualFile = workingBuildDir.resolve("${jarTaskNamePiece}-content-actual.txt").toFile()
         File reportFile = workingBuildDir.resolve("${jarTaskNamePiece}-content-report.txt").toFile()
 
@@ -120,9 +117,6 @@ class JarCheckPlugin implements Plugin<Project> {
           include actualFile.name
           rename actualFile.name, expectationFile.name
 
-          eachFile { fcp ->
-            println "Copying file ${fcp} into ${expectationFile.parent} / ${expectationFile.name}"
-          }
           inputs.files { project.tasks.named(examineContentTaskname) }
         }
 
@@ -145,13 +139,13 @@ class JarCheckPlugin implements Plugin<Project> {
       }
 
       if (config.checkManifestClasspath) {
-        println "Adding MANIFEST CLASSPATH checks for ${jarFile}"
+        project.logger.debug("Adding MANIFEST CLASSPATH checks for ${jarFile}")
 
         String examineContentTaskname = "examine${jarTaskNamePiece}ManifestClasspath"
         String checkContentTaskname = "check${jarTaskNamePiece}ManifestClasspath"
         String updateContentTaskname = "update${jarTaskNamePiece}ExpectedManifestClasspath"
 
-        File expectationFile = expectationPath.resolve("${jarTaskNamePiece}-manifest-classpath-expectation.txt").toFile()
+        File expectationFile = expectationDir.resolve("${jarTaskNamePiece}-manifest-classpath-expectation.txt").toFile()
         File actualFile = workingBuildDir.resolve("${jarTaskNamePiece}-manifest-classpath-actual.txt").toFile()
         File reportFile = workingBuildDir.resolve("${jarTaskNamePiece}-manifest-classpath-report.txt").toFile()
 
@@ -171,10 +165,7 @@ class JarCheckPlugin implements Plugin<Project> {
           include actualFile.name
           rename actualFile.name, expectationFile.name
 
-          eachFile { fcp ->
-            println "Copying file ${fcp} into ${expectationFile.parent} / ${expectationFile.name}"
-          }
-          inputs.files { project.tasks.named(examineContentTaskname)}
+          inputs.files { project.tasks.named(examineContentTaskname) }
         }
 
         project.tasks.register(checkContentTaskname, ListFileComparisonTask) {

@@ -25,7 +25,7 @@ import java.nio.file.Paths
 // This project aggressively reaches into many other projects and must wait for those configurations
 // to be evaluated and resolved.  Evaluation depends on each of these subprojects.
 
-// This list is used in a loop to defined the /lib copySpec 
+// This list is used in a loop to defined the /lib copySpec
 def dependentProjectNames = [
   ':geode-common',
   ':geode-connectors',
@@ -645,4 +645,11 @@ task dumpInstalledJars(dependsOn: installDist) {
 jarCheck {
   partOfCheck true
   checkAllJarTasks()
+
+  check(tasks.named("depsJar")) {
+    checkContent = false
+  }
+  check(tasks.named("gfshDepsJar")) {
+    checkContent = false
+  }
 }
