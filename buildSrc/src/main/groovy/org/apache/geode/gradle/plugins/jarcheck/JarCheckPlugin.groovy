@@ -45,10 +45,12 @@ class JarCheckPlugin implements Plugin<Project> {
     project.getPlugins().apply(BasePlugin.class)
 
     project.tasks.register(ROOT_CHECK_TASK_NAME) {
+      group "verification"
       description "This is a synthetic task to perform all jar checks configured with the JarCheck plugin."
     }
 
     project.tasks.register(ROOT_UPDATE_TASK_NAME) {
+      group "verification"
       description "This is a synthetic task to perform all jar expectation updates configured with the JarCheck plugin."
     }
 
@@ -61,8 +63,12 @@ class JarCheckPlugin implements Plugin<Project> {
     } as Action<Project>)
   }
 
-  static String jarFilenameToTaskName(File jarFile) {
-    return jarFile.name.replaceAll(/(?i)\.jar$/, '').split(/[^a-zA-Z01-9]+/)*.capitalize().join("")
+  static String stripToTaskNameFormat(File jarFile) {
+    return stripToTaskNameFormat(jarFile.name)
+  }
+
+  static String stripToTaskNameFormat(String s) {
+    return s.replaceAll(/(?i)\.jar$/, '').split(/[^a-zA-Z01-9]+/)*.capitalize().join("")
   }
 
   void hookIntoCheckIfRequested(Project project) {
@@ -73,6 +79,31 @@ class JarCheckPlugin implements Plugin<Project> {
     }
   }
 
+
+  void createTaskTrio(Project project, String descriptor, Class examineTaskType, File jarFile, String jarTaskNamePiece, Path workingBuildDir, Path expectationDir, JarCheckConfiguration config){
+    project.logger.debug("Adding ${descriptor.toUpperCase()} checks for ${jarFile}")
+
+    String examineTaskName = "examine${jarTaskNamePiece}${stripToTaskNameFormat(descriptor)}"
+    String checkTaskName = "check${jarTaskNamePiece}${stripToTaskNameFormat(descriptor)}"
+    String updateTaskName = "update${jarTaskNamePiece}Expected${stripToTaskNameFormat(descriptor)}"
+
+    File expectationFile = expectationDir.resolve("${jarTaskNamePiece}-${descriptor.toLowerCase()}-expectation.txt").toFile()
+    File actualFile = workingBuildDir.resolve("${jarTaskNamePiece}-${descriptor.toLowerCase()}-actual.txt").toFile()
+    File reportFile = workingBuildDir.resolve("${jarTaskNamePiece}-${descriptor.toLowerCase()}-report.txt").toFile()
+
+    createExpectationStubIfMissing(expectationFile, project, updateTaskName)
+
+    project.tasks.register(examineTaskName, examineTaskType) {
+      checks jarFile
+      outputFile = actualFile
+
+      if (config.jarCreator != null) {
+        inputs.files { config.jarCreator }
+      }
+    }
+
+    createUpdateAndCheckTasks(project, updateTaskName, actualFile, expectationFile, examineTaskName, checkTaskName, reportFile)
+  }
 
   void createTasks(Project project) {
     if (extension.implicitlyCheckAll) {
@@ -86,7 +117,7 @@ class JarCheckPlugin implements Plugin<Project> {
       expectationDir.toFile().mkdirs()
     }
     extension.jarsToCheck.each { File jarFile, JarCheckConfiguration config ->
-      String jarTaskNamePiece = jarFilenameToTaskName(jarFile)
+      String jarTaskNamePiece = stripToTaskNameFormat(jarFile)
       project.logger.debug("Creating check tasks for sanitized task name piece: ${jarTaskNamePiece}...")
 
       if (seenJarNamePieces.contains(jarTaskNamePiece)) {
@@ -100,120 +131,53 @@ class JarCheckPlugin implements Plugin<Project> {
       seenJarNamePieces.add(jarTaskNamePiece)
 
       if (config.checkContent) {
-        project.logger.debug("Adding CONTENT checks for ${jarFile}")
-
-        String examineContentTaskname = "examine${jarTaskNamePiece}Content"
-        String checkContentTaskname = "check${jarTaskNamePiece}Content"
-        String updateContentTaskname = "update${jarTaskNamePiece}ExpectedContent"
-
-        File expectationFile = expectationDir.resolve("${jarTaskNamePiece}-content-expectation.txt").toFile()
-        File actualFile = workingBuildDir.resolve("${jarTaskNamePiece}-content-actual.txt").toFile()
-        File reportFile = workingBuildDir.resolve("${jarTaskNamePiece}-content-report.txt").toFile()
-
-        if (!expectationFile.exists()) {
-          project.logger.warn("Expected jar-check file '${expectationFile}' does not exist.  Run '${updateContentTaskname}' to initialize.")
-          try {
-            println "can write? [${expectationFile.parentFile.canWrite()}]"
-            expectationFile.write("")
-          } catch (IOException e) {
-            project.logger.error("Could not initialize '${expectationFile}'.  Expect failures with message '... expectation does not exist.'")
-          }
-        }
-
-        project.tasks.register(examineContentTaskname, ExamineJarContentTask) {
-          checks jarFile
-          outputFile = actualFile
-
-          if (config.jarCreator != null) {
-            inputs.files { config.jarCreator }
-          }
-        }
-
-        project.tasks.register(updateContentTaskname, Copy) {
-          from actualFile.parent
-          into expectationFile.parent
-          include actualFile.name
-          rename actualFile.name, expectationFile.name
-
-          inputs.files { project.tasks.named(examineContentTaskname) }
-        }
-
-        project.tasks.register(checkContentTaskname, ListFileComparisonTask) {
-          actual = actualFile
-          expectation = expectationFile
-          report = reportFile
-          correspondingUpdateTaskProvider = project.tasks.named(updateContentTaskname)
-
-          inputs.files { project.tasks.named(examineContentTaskname) }
-          inputs.files { expectationFile }
-          mustRunAfter { project.tasks.named(updateContentTaskname) }
-        }
-
-        project.tasks.named(ROOT_CHECK_TASK_NAME).configure {
-          dependsOn checkContentTaskname
-        }
-        project.tasks.named(ROOT_UPDATE_TASK_NAME).configure {
-          dependsOn updateContentTaskname
-        }
+        createTaskTrio(project, "content", ExamineJarContentTask, jarFile, jarTaskNamePiece, workingBuildDir, expectationDir, config)
       }
 
       if (config.checkManifestClasspath) {
-        project.logger.debug("Adding MANIFEST CLASSPATH checks for ${jarFile}")
+        createTaskTrio(project, "manifest-classpath", ExamineJarManifestClasspathTask, jarFile, jarTaskNamePiece, workingBuildDir, expectationDir, config)
 
-        String examineManifestTaskname = "examine${jarTaskNamePiece}ManifestClasspath"
-        String checkManifestTaskname = "check${jarTaskNamePiece}ManifestClasspath"
-        String updateManifestTaskname = "update${jarTaskNamePiece}ExpectedManifestClasspath"
+      }
+    }
+  }
 
-        File expectationFile = expectationDir.resolve("${jarTaskNamePiece}-manifest-classpath-expectation.txt").toFile()
-        File actualFile = workingBuildDir.resolve("${jarTaskNamePiece}-manifest-classpath-actual.txt").toFile()
-        File reportFile = workingBuildDir.resolve("${jarTaskNamePiece}-manifest-classpath-report.txt").toFile()
+  private void createUpdateAndCheckTasks(Project project, String updateTaskname, File actualFile, File expectationFile, String examineTaskname, String checkTaskname, File reportFile) {
+    project.tasks.register(updateTaskname, Copy) {
+      from actualFile.parent
+      into expectationFile.parent
+      include actualFile.name
+      rename actualFile.name, expectationFile.name
 
-        if (!expectationFile.exists()) {
-          project.logger.warn("Expected jar-check file '${expectationFile}' does not exist.  Run '${updateManifestTaskname}' to initialize.")
-          try {
-            println "can write? [${expectationFile.parentFile.canWrite()}]"
-            expectationFile.write("")
-          } catch (IOException e) {
-            project.logger.error("Could not initialize '${expectationFile}'.  Expect failures with message '... expectation does not exist.'")
-          }
-        }
+      inputs.files { project.tasks.named(examineTaskname) }
+    }
 
+    project.tasks.register(checkTaskname, ListFileComparisonTask) {
+      actual = actualFile
+      expectation = expectationFile
+      report = reportFile
+      correspondingUpdateTaskProvider = project.tasks.named(updateTaskname)
 
-        project.tasks.register(examineManifestTaskname, ExamineJarManifestClasspathTask) {
-          checks jarFile
-          outputFile = actualFile
+      inputs.files { project.tasks.named(examineTaskname) }
+      inputs.files { expectationFile }
+      mustRunAfter { project.tasks.named(updateTaskname) }
+    }
 
-          if (config.jarCreator != null) {
-            inputs.files { config.jarCreator }
-          }
-        }
+    project.tasks.named(ROOT_CHECK_TASK_NAME).configure {
+      dependsOn checkTaskname
+    }
+    project.tasks.named(ROOT_UPDATE_TASK_NAME).configure {
+      dependsOn updateTaskname
+    }
+  }
 
-        project.tasks.register(updateManifestTaskname, Copy) {
-          from actualFile.parent
-          into expectationFile.parent
-          include actualFile.name
-          rename actualFile.name, expectationFile.name
-
-          inputs.files { project.tasks.named(examineManifestTaskname) }
-        }
-
-        project.tasks.register(checkManifestTaskname, ListFileComparisonTask) {
-          actual = actualFile
-          expectation = expectationFile
-          report = reportFile
-          correspondingUpdateTaskProvider = project.tasks.named(updateManifestTaskname)
-
-          inputs.files { project.tasks.named(examineManifestTaskname) }
-          inputs.files { expectationFile }
-          mustRunAfter { project.tasks.named(updateManifestTaskname) }
-        }
-
-        project.tasks.named(ROOT_CHECK_TASK_NAME).configure {
-          dependsOn checkManifestTaskname
-        }
-        project.tasks.named(ROOT_UPDATE_TASK_NAME).configure {
-          dependsOn updateManifestTaskname
-        }
+  private void createExpectationStubIfMissing(File expectationFile, Project project, String updateContentTaskname) {
+    if (!expectationFile.exists()) {
+      project.logger.warn("Expected jar-check file '${expectationFile}' does not exist.  Run '${updateContentTaskname}' to initialize.")
+      try {
+        println "can write? [${expectationFile.parentFile.canWrite()}]"
+        expectationFile.write("")
+      } catch (IOException e) {
+        project.logger.error("Could not initialize '${expectationFile}'.  Expect failures with message '... expectation does not exist.'")
       }
     }
   }
