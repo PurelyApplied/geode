@@ -12,24 +12,26 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.geode.distributed.internal.membership;
 
-/**
- * Test hook for membership test development
- */
-public interface MembershipTestHook {
+package org.apache.geode.management.internal.rest;
 
-  /**
-   * test hook invoked prior to shutting down distributed system
-   */
-  default void beforeMembershipFailure(String reason, Throwable cause) {
-    // nothing
+import org.apache.geode.distributed.ConfigurationProperties;
+import org.apache.geode.distributed.LocatorLauncher;
+
+public class LocatorLauncherContextLoader extends BaseLocatorContextLoader {
+
+  private final GeodeComponent locator;
+
+  public LocatorLauncherContextLoader() {
+    LocatorLauncher.Builder builder = new LocatorLauncher.Builder()
+        .setPort(0)
+        .setMemberName("locator-0")
+        .set(ConfigurationProperties.LOG_LEVEL, "config");
+    locator = new WrappedLocatorLauncher(builder);
   }
 
-  /**
-   * test hook invoked after shutting down distributed system
-   */
-  default void afterMembershipFailure(String reason, Throwable cause) {
-    // nothing
+  @Override
+  public GeodeComponent getLocator() {
+    return locator;
   }
 }

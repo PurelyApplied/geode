@@ -12,24 +12,21 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.geode.management.internal.cli.json;
 
-/**
- * Wraps GemFire JSON Exceptions
- *
- *
- *
- * @since GemFire 7.0
- */
-public class GfJsonException extends Exception {
+package org.apache.geode.management.internal.rest;
 
-  private static final long serialVersionUID = 36449998984143318L;
+import org.apache.geode.internal.security.SecurityService;
+import org.apache.geode.management.api.ClusterManagementService;
 
-  public GfJsonException(String message) {
-    super(message);
-  }
+public interface GeodeComponent {
 
-  public GfJsonException(Exception e) {
-    super(e);
-  }
+  void start();
+
+  void stop();
+
+  int getPort();
+
+  SecurityService getSecurityService();
+
+  ClusterManagementService getClusterManagementService();
 }
