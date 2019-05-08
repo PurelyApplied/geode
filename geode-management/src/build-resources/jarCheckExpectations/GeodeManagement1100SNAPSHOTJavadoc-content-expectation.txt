@@ -85,6 +85,7 @@ org/apache/geode/management/client/JavaClientClusterManagementServiceConfig.html
 org/apache/geode/management/client/package-frame.html
 org/apache/geode/management/client/package-summary.html
 org/apache/geode/management/client/package-tree.html
+org/apache/geode/management/configuration/MemberConfig.CacheServerConfig.html
 org/apache/geode/management/configuration/MemberConfig.html
 org/apache/geode/management/configuration/RuntimeCacheElement.html
 org/apache/geode/management/configuration/RuntimeRegionConfig.html

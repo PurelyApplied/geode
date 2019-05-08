@@ -72,6 +72,7 @@ org/apache/geode/management/client/JavaClientClusterManagementServiceConfig$Buil
 org/apache/geode/management/client/JavaClientClusterManagementServiceConfig$GenericBuilder.class
 org/apache/geode/management/client/JavaClientClusterManagementServiceConfig$RequestFactoryBuilder.class
 org/apache/geode/management/client/JavaClientClusterManagementServiceConfig.class
+org/apache/geode/management/configuration/MemberConfig$CacheServerConfig.class
 org/apache/geode/management/configuration/MemberConfig.class
 org/apache/geode/management/configuration/RuntimeCacheElement.class
 org/apache/geode/management/configuration/RuntimeRegionConfig.class

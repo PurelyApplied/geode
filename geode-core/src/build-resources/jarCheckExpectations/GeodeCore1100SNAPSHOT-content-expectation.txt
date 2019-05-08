@@ -4927,10 +4927,6 @@ org/apache/geode/management/internal/cli/json/AbstractJSONFormatter$PreventReser
 org/apache/geode/management/internal/cli/json/AbstractJSONFormatter$RegionEntrySerializer.class
 org/apache/geode/management/internal/cli/json/AbstractJSONFormatter$StructSerializer.class
 org/apache/geode/management/internal/cli/json/AbstractJSONFormatter.class
-org/apache/geode/management/internal/cli/json/GfJsonArray.class
-org/apache/geode/management/internal/cli/json/GfJsonException.class
-org/apache/geode/management/internal/cli/json/GfJsonObject$1.class
-org/apache/geode/management/internal/cli/json/GfJsonObject.class
 org/apache/geode/management/internal/cli/json/QueryResultFormatter.class
 org/apache/geode/management/internal/cli/modes/commands.json
 org/apache/geode/management/internal/cli/modes/connect.json
@@ -5002,7 +4998,6 @@ org/apache/geode/management/internal/cli/util/HostUtils.class
 org/apache/geode/management/internal/cli/util/HyphenFormatter.class
 org/apache/geode/management/internal/cli/util/JConsoleNotFoundException.class
 org/apache/geode/management/internal/cli/util/JdkTool.class
-org/apache/geode/management/internal/cli/util/JsonUtil$1.class
 org/apache/geode/management/internal/cli/util/JsonUtil.class
 org/apache/geode/management/internal/cli/util/LogExporter.class
 org/apache/geode/management/internal/cli/util/LogFilter$LineFilterResult.class

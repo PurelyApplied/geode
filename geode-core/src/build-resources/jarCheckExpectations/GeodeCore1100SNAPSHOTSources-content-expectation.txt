@@ -3165,9 +3165,6 @@ org/apache/geode/management/internal/cli/help/Helper.java
 org/apache/geode/management/internal/cli/help/Topic.java
 org/apache/geode/management/internal/cli/i18n/CliStrings.java
 org/apache/geode/management/internal/cli/json/AbstractJSONFormatter.java
-org/apache/geode/management/internal/cli/json/GfJsonArray.java
-org/apache/geode/management/internal/cli/json/GfJsonException.java
-org/apache/geode/management/internal/cli/json/GfJsonObject.java
 org/apache/geode/management/internal/cli/json/QueryResultFormatter.java
 org/apache/geode/management/internal/cli/remote/CommandExecutionContext.java
 org/apache/geode/management/internal/cli/remote/CommandExecutor.java

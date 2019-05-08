@@ -423,6 +423,7 @@ org/apache/geode/internal/cache/EnumListenerEventJUnitTest.class
 org/apache/geode/internal/cache/EvictionAttributesImplTest.class
 org/apache/geode/internal/cache/ExpireDisconnectedClientTransactionsMessageTest.class
 org/apache/geode/internal/cache/ExpiryTaskTest.class
+org/apache/geode/internal/cache/FilterInfoTest.class
 org/apache/geode/internal/cache/FilterProfileNullCqBaseRegionJUnitTest.class
 org/apache/geode/internal/cache/FlusherThreadTest.class
 org/apache/geode/internal/cache/GemFireCacheImplTest.class
@@ -1002,7 +1003,6 @@ org/apache/geode/management/internal/cli/CommandManagerJUnitTest$MockPluginComma
 org/apache/geode/management/internal/cli/CommandManagerJUnitTest$MockPluginCommandUnlisted.class
 org/apache/geode/management/internal/cli/CommandManagerJUnitTest.class
 org/apache/geode/management/internal/cli/CommandSeparatorEscapeJUnitTest.class
-org/apache/geode/management/internal/cli/DataCommandJsonJUnitTest.class
 org/apache/geode/management/internal/cli/GfshParserJUnitTest.class
 org/apache/geode/management/internal/cli/commands/AlterAsyncEventQueueCommandTest.class
 org/apache/geode/management/internal/cli/commands/AlterRegionCommandTest.class
@@ -1100,11 +1100,6 @@ org/apache/geode/management/internal/cli/functions/ShowMissingDiskStoresFunction
 org/apache/geode/management/internal/cli/functions/UserFunctionExecutionTest.class
 org/apache/geode/management/internal/cli/help/HelpBlockUnitTest.class
 org/apache/geode/management/internal/cli/help/HelperUnitTest.class
-org/apache/geode/management/internal/cli/json/GfJsonArrayTest$Simple.class
-org/apache/geode/management/internal/cli/json/GfJsonArrayTest.class
-org/apache/geode/management/internal/cli/json/GfJsonObjectTest$GetMethodReturnsObjectReferencingMe.class
-org/apache/geode/management/internal/cli/json/GfJsonObjectTest$Simple.class
-org/apache/geode/management/internal/cli/json/GfJsonObjectTest.class
 org/apache/geode/management/internal/cli/json/QueryResultFormatterTest$Currency.class
 org/apache/geode/management/internal/cli/json/QueryResultFormatterTest$EnumContainer.class
 org/apache/geode/management/internal/cli/json/QueryResultFormatterTest.class
