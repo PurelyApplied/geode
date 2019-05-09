@@ -344,8 +344,7 @@ jobs:
   serial: true
   plan:
   - get: geode
-    passed:
-    {{ all_gating_jobs() | indent(4) }}
+    passed: [PublishArtifacts]
     trigger: true
   - get: geode-ci
   - task: updatepassingref
@@ -367,8 +366,7 @@ jobs:
   serial: true
   plan:
   - get: geode-build-version
-    passed:
-    {{ all_gating_jobs() | indent(6) }}
+    passed: [PublishArtifacts]
     trigger: true
   - put: geode-passing-version
     params:
