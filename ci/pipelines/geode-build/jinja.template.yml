@@ -101,6 +101,7 @@ groups:
   - {{ build_test.name }}
   {{- all_gating_jobs() | indent(2) }}
   - UpdatePassingTokens
+#  {%- if pipeline.publish.artifacts %}
   {%- if repository.upstream_fork != "apache" or repository.branch == "develop" %}
   - PublishArtifacts
   {%- endif %}
@@ -113,6 +114,7 @@ groups:
     {%- endfor -%}
   {%- endfor %}
   - UpdatePassingTokens
+#  {%- if pipeline.publish.artifacts %}
   {%- if repository.upstream_fork != "apache" or repository.branch == "develop" %}
   - PublishArtifacts
   {%- endif %}
@@ -349,6 +351,7 @@ jobs:
   - aggregate:
     - get: geode
       passed: &update-token-passed-anchor
+#{%- if pipeline.publish.artifacts %}
 {%- if repository.upstream_fork != "apache" or repository.branch == "develop" %}
       - PublishArtifacts
 {% else %}
@@ -383,17 +386,22 @@ jobs:
           JSON
           echo "${GEODE_SHA}" > geode-passing-tokens/sha
   - aggregate:
+#{% if pipeline.publish.buildID %}
     - put: geode-passing-version
       params:
         file: geode-build-version/number
+#{% endif %}
+#{% if pipeline.publish.ref %}
 {% if repository.sanitized_fork == "apache" or repository.branch == "develop" %}
     - put: geode-passing-sha
       params:
         file: geode-passing-tokens/sha
 {% endif %}
+#{% if pipeline.publish.tokenPair %}
     - put: geode-passing-tokens
       params:
         file: geode-passing-tokens/*.json
+#{% endif %}
 
 - name: Benchmark
   public: true

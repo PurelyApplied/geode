@@ -15,6 +15,13 @@
 # limitations under the License.
 #
 
+pipeline:
+  publish:
+    ref: true
+    buildID: true
+    tokenPair: true
+    artifacts: true
+
 repository:
   project: geode
 
