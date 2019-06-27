@@ -57,24 +57,31 @@ this is really just a haphazard collection of things I subjectively consider imp
 Some things are initially presented in the "easy to think this way that is a little bit wrong."
 I footnote these with the correction.
 This document is meant to be educational, not necessarily as a concise reference, and the path to understanding is rarely direct.
-I know it can seem misleading, particularly to technical people, but here we are.
+I know it can seem misleading, particularly to people who are technically inclined, but here we are.
 
-I learned Gradle the proverbial Hard Way while revamping a legacy build into something parallelizable, correct, and consistent.
-(More or less.)
-None of this 
+I learned Gradle the proverbial Hard Way while revamping a legacy build into something parallelizable, correct, and consistent.%
+\footnote{Or at least, \emph{more} parallelizable, correct, and consistent.}
+It expects a passing familarity but not a comprehensive understanding.
+This is for people trying to understand their Gradle build,
+  not necessarily for someone trying to write a new one.
+
 
 \section{Groovy crash course}
 
 Groovy feels like Java's side-hustle moonlighting as a scripting language.
-It is much more permissive than Java is, which can freeing at times and more than enough rope at others.
-If you want an actual syntax-and-such crash course, I encourage you to read the docs.
-\footnote{\url{http://groovy-lang.org/documentation.html}}%
+It is much more permissive than Java is,
+  which can be freeing at times and can feel like more than enough rope at others.
+If you want an actual syntax-and-such crash course, I encourage you to read the docs.%
+\footnote{\url{http://groovy-lang.org/documentation.html}}
 Alternatively, I'm a personal fan of Learn X in Y Minutes.%
 \footnote{\url{https://learnxinyminutes.com/docs/groovy/}}
 
-\subsection{Function arguments without parentheses}
+The things I mention here have more to do with what you might find confusing or counter-intuitive.
 
-Something that can be initially confusing is the fact that Groovy can accept function parameters without parentheses.
+\subsection{Functions don't require parentheses}
+
+Something that can be initially confusing is the fact that Groovy can accept function parameters
+  without parentheses.
 A common example is 
 
 \begin{lstlisting}[language=Groovy]
@@ -85,7 +92,8 @@ which is equivalent to
 println("Hello world!")
 \end{lstlisting}
 
-As we'll see in a moment, there is a lot of wiggle room when it comes to parentheses and how arguments are passed to Groovy functions.
+As we'll see in a moment, there is a lot of wiggle room when it comes to parentheses
+  and how arguments are passed to Groovy functions.
 This is particularly true when it comes to closures...
 
 \subsection{Closures}
@@ -116,25 +124,44 @@ assert greeting3("Patrick") == "Hello, Patrick!"
 \end{figure}
 
 \subsection{More than super-lambdas}
-
+\label{sec:super-lambdas}
 The real power of closures comes from \emph{delegate injection}.
-Unlike a Java lambda, closures are
+Unlike a Java lambda, closures are [TODO WORDS]
 
-\begin{figure}[h]
+\begin{figure}
   \centering
   \begin{lstlisting}[language=Groovy]
 class MyStringContainer {
-  String myString
+  private myString
 
-  MyStringContainer(String myString) {
-    this.myString = myString
+  MyStringContainer(String s) {
+    myString = s
   }
+
+  String getMyString(){
+    println "In getter"
+    return myString
+  }
+
+  String setMyString(String s){
+    println "In setter"
+    myString = s
+  }
+
 
   String plus(String s){
     return myString + s
   }
 }
+  \end{lstlisting}
+  \caption{We will use this simple class in many of the subsequent examples.}
+  \label{fig:container}
+\end{figure}
 
+
+Consider the following function which takes a \texttt{MyStringContainer} and a closure.
+
+\begin{lstlisting}[language=Groovy]
 String myFunc(MyStringContainer container,
               Closure someClosure){
   cl.delegate = container
@@ -144,41 +171,110 @@ String myFunc(MyStringContainer container,
 println myFunc(new MyStringContainer("Hello"), {
   plus " world!"
 })
-  \end{lstlisting}
-  \caption{Blah}
-  \label{fig:delegation}
-\end{figure}
+\end{lstlisting}
+
+This snippet will print \texttt{Hello world!}  [TODO explain why]
 
 \subsection{Syntactic sugar}
+\subsubsection{Setters are getters}
+
+Setters and getters are boring.
+Groovy doesn't make you use them.
+The following are equivalent.
+
+In the Java-style
+\begin{lstlisting}[language=Groovy]
+MyStringContainer x = new MyStringContainer("foo")
+println(x.getMyString())
+x.setMyString("bar")
+println(x.getMyString())
+\end{lstlisting}
+
+Making the same function-calls in Groovy
+\begin{lstlisting}[language=Groovy]
+def x = new MyStringContainer("foo")
+println x.myString
+x.myString = "bar"
+println x.myString
+\end{lstlisting}
+
+Note that if you run this locally, you \emph{do} get
+  the \texttt{"In setter"} and \texttt{"In getter"} prints in both cases.
+
+\subsubsection{Playing fast and loose with parentheses return values}
+
+Let us consider again the snippet from Section \ref{sec:super-lambdas}.
+
+\begin{lstlisting}[language=Groovy]
+String myFunc(MyStringContainer container,
+              Closure someClosure){
+  cl.delegate = container
+  return someClosure()
+}
+
+println myFunc(new MyStringContainer("Hello"), {
+  plus " world!"
+})
+\end{lstlisting}
+
+Groovy does not require an explicit \texttt{return}, and in its absense, will return the last
+  line called.
+Also, Groovy will allow you to close the paren before the last argument of a function if that
+  final argument is a closure.
+As such, the following snippet is equivalent to the above.
+
+\begin{lstlisting}[language=Groovy]
+String myFunc(MyStringContainer container,
+              Closure someClosure){
+  cl.delegate = container
+  someClosure()  // <- no explicit return
+}
+
+               // note paren placement here  v
+println myFunc(new MyStringContainer("Hello")) {
+  plus " world!"
+}    // <- not here
+\end{lstlisting}
+
+\subsubsection{Corollary: What seems like keywords are actually function calls}
+
+Consider the code presented in Figure \ref{fig:keywords}, pulled from Apache Geode's build.
+In this snippet, we declare a task of type \texttt{Jar} and configure it.
+
+It might initially seem like a convoluted markup language,
+  only marginally better than hand-crafting an XML that will be parsed out by our builder.
+Knowing the concepts presented above, however, we can see that it is a culmination of
+  syntactic sugar and closure delegation.
+In my own learning of Groovy and Gradle, realizing this did a great deal to demystify the
+  code I was attempting to improve.
 
 \begin{figure}[h]
   \centering
   \begin{lstlisting}[language=Groovy]
-class MyStringContainer {
-  // As defined above.
-}
-
-String myFunc(MyStringContainer container,
-        Closure someClosure){
-  cl.delegate = container
-  someClosure()
-}
-
-println myFunc(new MyStringContainer("Hello")) {
-  plus " world!"
+// From apache/geode.git/geode-assembly/build.gradle
+tasks.register('depsJar', Jar) {
+  inputs.files {
+    configDeps  // <- a task defined elsewhere
+  }
+  description 'Assembles jar archive defining classpath.'
+  archiveName 'geode-dependencies.jar'
+  doFirst {
+    manifest {
+      attributes(
+        "Class-Path":
+             configDeps.outputs.files.singleFile.text)
+    }
+  }
 }
   \end{lstlisting}
-  \caption{This code is equivalent to that of Figure \ref{fig:delegation}.
-    The return value of \texttt{myFunc} is implicitly the last line executed, and the \texttt{Closure} argument passed to \texttt{myFunc} is defined after the closing parenthesis for its function call.
-  }
-  \label{fig:sugar}
+  \caption{Via syntactic sugar and closure delegation,
+  a function \texttt{register} is invoked with three arguments: a String name, a class, and a closure.
+  Within the context and from the delegate of that closure,
+    the \texttt{doFirst} function takes another closure,
+    the delegate of which can handle the \texttt{manifest} function call.
+  And so on.}
+  \label{fig:keywords}
 \end{figure}
-
-\subsection{Corollary: Those keywords are actually function calls}
-
-Consider the code presented in Figure \ref{fig:keywords}.
-
-
   
 \section{Gradle crash course}
 
@@ -209,6 +305,11 @@ A task typically has some inputs, some outputs, and some task dependencies.
 
 Every task is named.
 When you invoke a build via \texttt{./gradlew build}, you are invoking the \texttt{:build} task that lives in the root project.
+Often, this will require the building of each subproject, and these tasks are also named, with the colon-separated path prepended to the task name.
+So when you run \texttt{./gradlew build}, you will run \texttt{:build} and also \texttt{:subProject:build} and \texttt{:subProject:deeperSubProject:build}
+
+How does the initial \texttt{:build} task no to invoke those other tasks?
+The task graph!
 
 \subsection{Phases of a build}
 The lifecycle of a build\footnote{See the docs: \url{https://docs.gradle.org/current/userguide/build_lifecycle.html}} consists of three main phases: Initialization, Configuration, and Execution.
