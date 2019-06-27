@@ -1,0 +1,253 @@
+\documentclass[]{article}
+
+\usepackage{hyperref}  % clicky-links
+\usepackage[utf8]{inputenc}  % language support
+\usepackage[english]{babel}  % language support
+\usepackage{listings} % enables lstlisting for code blocks.
+\usepackage{amsthm}  % \newtheorem*
+% \usepackage{framed} % \begin{framed}
+\usepackage[framestyle=fbox,framefit=yes,heightadjust=all,framearound=all]{floatrow}  % Put a box around every figure or table
+
+\theoremstyle{definition}
+\newtheorem*{tip}{Protip}
+
+\usepackage{xcolor} % \definecolor
+
+%%%%%
+%% Define groovy highlighting, from https://buergel.es/index.php/articles/latex-listings-groovy-aspectj.html
+%% Added here:
+%%  showstringspaces=false,
+%%  commentstyle=\color{gray}\ttfamily,
+%%  morekeywords={...}
+\definecolor{groovyblue}{HTML}{0000A0}
+\definecolor{groovygreen}{HTML}{008000}
+\definecolor{darkgray}{rgb}{.4,.4,.4}
+
+\lstdefinelanguage{Groovy}[]{Java}{
+  keywordstyle=\color{groovyblue}\bfseries,
+  stringstyle=\color{groovygreen}\ttfamily,
+  keywords=[3]{each, findAll, groupBy, collect, inject, eachWithIndex},
+  showstringspaces=false,
+  commentstyle=\color{gray}\ttfamily,
+  morekeywords={def, as, in, use, tasks, inputs, outputs},
+  moredelim=[is][\textcolor{darkgray}]{\%\%}{\%\%},
+  moredelim=[il][\textcolor{darkgray}]{§§}
+}
+%%%%%%
+\title{Building a working \texttt{./gradlew build}  \large \\
+  A collection of best practices, pain points, and tricks \\
+  that I hard to learn the hard way}
+
+\author{Patrick S. Rhomberg, GitHub user \texttt{PurelyApplied}}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+
+\section{Introduction and disclaimer}
+
+Pretend this is a dev blog.
+I intend, in fact, to upload this to a personal dev blog.
+Remember read this with that mentality.
+Despite the nice presentation that comes from my love of \LaTeX, 
+this is really just a haphazard collection of things I subjectively consider important for someone trying to ramp up or stabilize their Gradle build.
+
+Some things are initially presented in the "easy to think this way that is a little bit wrong."
+I footnote these with the correction.
+This document is meant to be educational, not necessarily as a concise reference, and the path to understanding is rarely direct.
+I know it can seem misleading, particularly to technical people, but here we are.
+
+I learned Gradle the proverbial Hard Way while revamping a legacy build into something parallelizable, correct, and consistent.
+(More or less.)
+None of this 
+
+\section{Groovy crash course}
+
+Groovy feels like Java's side-hustle moonlighting as a scripting language.
+It is much more permissive than Java is, which can freeing at times and more than enough rope at others.
+If you want an actual syntax-and-such crash course, I encourage you to read the docs.
+\footnote{\url{http://groovy-lang.org/documentation.html}}%
+Alternatively, I'm a personal fan of Learn X in Y Minutes.%
+\footnote{\url{https://learnxinyminutes.com/docs/groovy/}}
+
+\subsection{Function arguments without parentheses}
+
+Something that can be initially confusing is the fact that Groovy can accept function parameters without parentheses.
+A common example is 
+
+\begin{lstlisting}[language=Groovy]
+println "Hello world!"
+\end{lstlisting}
+which is equivalent to 
+\begin{lstlisting}[language=Groovy]
+println("Hello world!")
+\end{lstlisting}
+
+As we'll see in a moment, there is a lot of wiggle room when it comes to parentheses and how arguments are passed to Groovy functions.
+This is particularly true when it comes to closures...
+
+\subsection{Closures}
+\textit{Closures} are the Bit Hotness in Groovy.
+You can start off by thinking of a closure as a super-lambda.%
+\footnote{This is absolutely incorrect, but it's a reasonable starting point.
+  Closures have the advantage of being able to be configured after instantiation in ways that Java lambdas do not.
+  See\ \url{http://groovy-lang.org/closures.html\#\_groovy_closures_vs_lambda_expressions} for details.}
+Closures are ubiquitous in Gradle because they're a wonderful way to specify configuration as a parameter, in a reasonably readable and intuitive way.
+
+Closures look like (and really \emph{are}) an arbitrary code block.
+They're offset by squiggly-braces and often seem to follow a keyword.
+Closures have an implicit parameter of \texttt{it}.
+See Figure \ref{fig:equiv} for a trivial example.
+
+\begin{figure}[h]
+  \centering
+  \begin{lstlisting}[language=Groovy]
+def greeting1 = { "Hello, $it!" } 
+def greeting2 = { it -> "Hello, $it!" }
+def greeting3 = { name -> "Hello, $name!" }
+assert greeting1("Patrick") == "Hello, Patrick!"
+assert greeting2("Patrick") == "Hello, Patrick!"
+assert greeting3("Patrick") == "Hello, Patrick!"
+  \end{lstlisting}
+\caption{Closures can have implicit arguments or explicitly named ones.  See the docs for details.} % \href{http://groovy-lang.org/closures.html#implicit-it}{the docs} for details.}
+\label{fig:equiv}
+\end{figure}
+
+\subsection{More than super-lambdas}
+
+The real power of closures comes from \emph{delegate injection}.
+Unlike a Java lambda, closures are
+
+\begin{figure}[h]
+  \centering
+  \begin{lstlisting}[language=Groovy]
+class MyStringContainer {
+  String myString
+
+  MyStringContainer(String myString) {
+    this.myString = myString
+  }
+
+  String plus(String s){
+    return myString + s
+  }
+}
+
+String myFunc(MyStringContainer container,
+              Closure someClosure){
+  cl.delegate = container
+  return someClosure()
+}
+
+println myFunc(new MyStringContainer("Hello"), {
+  plus " world!"
+})
+  \end{lstlisting}
+  \caption{Blah}
+  \label{fig:delegation}
+\end{figure}
+
+\subsection{Syntactic sugar}
+
+\begin{figure}[h]
+  \centering
+  \begin{lstlisting}[language=Groovy]
+class MyStringContainer {
+  // As defined above.
+}
+
+String myFunc(MyStringContainer container,
+        Closure someClosure){
+  cl.delegate = container
+  someClosure()
+}
+
+println myFunc(new MyStringContainer("Hello")) {
+  plus " world!"
+}
+  \end{lstlisting}
+  \caption{This code is equivalent to that of Figure \ref{fig:delegation}.
+    The return value of \texttt{myFunc} is implicitly the last line executed, and the \texttt{Closure} argument passed to \texttt{myFunc} is defined after the closing parenthesis for its function call.
+  }
+  \label{fig:sugar}
+\end{figure}
+
+\subsection{Corollary: Those keywords are actually function calls}
+
+Consider the code presented in Figure \ref{fig:keywords}.
+
+
+  
+\section{Gradle crash course}
+
+\subsection{The root project, subprojects, and buildSrc}
+
+Your Gradle build structures itself similar to your directory structure.
+The build begins in some root directory containing a \texttt{build.gradle} file and almost certainly also a \texttt{settings.gradle} file.
+This corresponds to your \emph{rootProject} of the build.
+
+In the \texttt{settings.gradle} file, you might indicate subdirectories that this build should \texttt{include}.
+These directories become \emph{subprojects}
+
+There is one special subproject that does not need to be called out as include, and that is \texttt{buildSrc}.
+This subproject will contain any special files that the Gradle build might need to execute.
+For instance, if you have a custom class defining how testing should work, that class will be compiled by the \texttt{buildSrc} subproject before your main build begins.
+Alternatively, any custom plugins you use in your Gradle build can be compiled here and consumed by your build, without having to host the plugin to the Gradle Plugin Portal.
+
+\subsection{The build in broadest of strokes - Tasks, the Task Graph, and Task I/O}
+
+Things get done in Gradle by \emph{tasks}.
+A task is essentially the atomic unit of work in Gradle.%
+\footnote{This is not precisely accurate.
+  The smallest cachable unit of work in Gradle is an \emph{action}.
+  Most of the time, you won't need to deal with things at such a fine granularity.
+  But if you explicitly declare out a \texttt{doFirst} or \texttt{doLast} block, you are registering additional actions to your task.
+}
+A task typically has some inputs, some outputs, and some task dependencies.
+
+Every task is named.
+When you invoke a build via \texttt{./gradlew build}, you are invoking the \texttt{:build} task that lives in the root project.
+
+\subsection{Phases of a build}
+The lifecycle of a build\footnote{See the docs: \url{https://docs.gradle.org/current/userguide/build_lifecycle.html}} consists of three main phases: Initialization, Configuration, and Execution.
+
+The Initialization phase loads your \texttt{settings.gradle} to identify what subprojects and (in a multi-project build) what projects will been needed for this build.
+
+
+
+\section{Advice for Gradle Users}
+
+\subsection{Gradle gotchas}
+
+\subsubsection{A task should depend on a task, not on a task.outputs.files}
+Getting the files output by a task is not the same as getting the outputs directly.  For instance,
+\begin{lstlisting}[language=Groovy]
+tasks.register('myTask') {
+  inputs.files { someOtherTask.outputs.files }
+  // task configuration
+}
+\end{lstlisting}
+
+does not imply a task dependency in the way that the following does.
+\begin{lstlisting}[language=Groovy]
+tasks.register('myTask') {
+  inputs.files { someOtherTask }
+  // task configuration
+}
+\end{lstlisting}
+
+The former declares locations on disk as the input to a task, whereas the latter declares the output of a task as the input to another task.
+Because Gradle builds incrementally and \texttt{inputs} are more concerned with changes than explicit content, the absence of these files is considered a valid input.
+Depending directly on another task, as in the latter example, had additional safeguards that guarantee that a files are being produced for consumption.
+
+\subsection{Gradle best practices and conventions}
+
+\subsection{Gradle command line interactions}
+
+\subsection{Important notes for consuming Geode via composite build}
+
+\end{document}
+
+
