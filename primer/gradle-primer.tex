@@ -1,11 +1,21 @@
-\documentclass[]{article}
+ \documentclass[]{article}
 
+\usepackage[total={7in, 9in}]{geometry}
 \usepackage{hyperref}  % clicky-links
 \usepackage[utf8]{inputenc}  % language support
 \usepackage[english]{babel}  % language support
 \usepackage{listings} % enables lstlisting for code blocks.
 \usepackage{amsthm}  % \newtheorem*
-% \usepackage{framed} % \begin{framed}
+\usepackage{framed} % \begin{framed}
+
+\usepackage{newfloat}
+\DeclareFloatingEnvironment[
+    listname={List of Snippets},
+    name=Snippet,
+    placement=tbhp,
+%    within=section,
+]{snippet}
+
 \usepackage[framestyle=fbox,framefit=yes,heightadjust=all,framearound=all]{floatrow}  % Put a box around every figure or table
 
 \theoremstyle{definition}
@@ -38,13 +48,25 @@
   A collection of best practices, pain points, and tricks \\
   that I hard to learn the hard way}
 
-\author{Patrick S. Rhomberg, GitHub user \texttt{PurelyApplied}}
+\author{Patrick S. Rhomberg,\\ a.k.a. GitHub user \texttt{PurelyApplied}}
+
+
+\newcommand{\startSnippetFig}{%
+\begin{snippet}[t]
+  \begin{minipage}[c]{.6\textwidth}
+    \begin{framed}
+}
+\newcommand{\stopSnippetFig}{%
+    \end{framed}
+  \end{minipage}
+\end{snippet}
+}
 
 \begin{document}
 
 \maketitle
 \tableofcontents
-
+\newpage
 
 \section{Introduction and disclaimer}
 
@@ -82,55 +104,70 @@ The things I mention here have more to do with what you might find confusing or 
 
 Something that can be initially confusing is the fact that Groovy can accept function parameters
   without parentheses.
-A common example is 
+See Snippet \ref{snip:hello-parens} for an explcit example.
+This is true even for functions that accept more than one argument,
+  although in this case parentheses often improve readability.
+Also, nesting function calls \emph{does} require parentheses.
 
+
+\startSnippetFig
 \begin{lstlisting}[language=Groovy]
 println "Hello world!"
-\end{lstlisting}
-which is equivalent to 
-\begin{lstlisting}[language=Groovy]
+// is equivalent to
 println("Hello world!")
+
+
+def add(int x, int y) {
+  return x + y
+}
+
+def z = add(1, 2)
+// is equivalent to
+def z = add 1, 2
 \end{lstlisting}
+\caption{Parentheses are often optional in Groovy.}
+\label{snip:hello-parens}
+\stopSnippetFig
 
 As we'll see in a moment, there is a lot of wiggle room when it comes to parentheses
   and how arguments are passed to Groovy functions.
-This is particularly true when it comes to closures...
+This is particularly true when it comes to closures.
+''But what are closures?'' I hear you cry...
 
 \subsection{Closures}
-\textit{Closures} are the Bit Hotness in Groovy.
+\textit{Closures} are the Big Hotness in Groovy.
 You can start off by thinking of a closure as a super-lambda.%
-\footnote{This is absolutely incorrect, but it's a reasonable starting point.
-  Closures have the advantage of being able to be configured after instantiation in ways that Java lambdas do not.
+\footnote{While this is absolutely incorrect, it's a reasonable starting point that we will correct in a moment.
+  As we'll see, closures are first-class objects and have the advantage of being able to be configured after instantiation in ways that Java lambdas do not.
   See\ \url{http://groovy-lang.org/closures.html\#\_groovy_closures_vs_lambda_expressions} for details.}
 Closures are ubiquitous in Gradle because they're a wonderful way to specify configuration as a parameter, in a reasonably readable and intuitive way.
 
 Closures look like (and really \emph{are}) an arbitrary code block.
-They're offset by squiggly-braces and often seem to follow a keyword.
-Closures have an implicit parameter of \texttt{it}.
-See Figure \ref{fig:equiv} for a trivial example.
+They're offset by squiggly-braces, like any function definition or \texttt{for} loop block.
 
-\begin{figure}[h]
-  \centering
-  \begin{lstlisting}[language=Groovy]
-def greeting1 = { "Hello, $it!" } 
+Closures often have an implicit parameter of \texttt{it}.
+See Snippet \ref{snip:implicit-params} for a trivial example.
+
+\startSnippetFig
+      \begin{lstlisting}[language=Groovy]
+def greeting1 = { "Hello, $it!" }
 def greeting2 = { it -> "Hello, $it!" }
 def greeting3 = { name -> "Hello, $name!" }
 assert greeting1("Patrick") == "Hello, Patrick!"
 assert greeting2("Patrick") == "Hello, Patrick!"
 assert greeting3("Patrick") == "Hello, Patrick!"
-  \end{lstlisting}
-\caption{Closures can have implicit arguments or explicitly named ones.  See the docs for details.} % \href{http://groovy-lang.org/closures.html#implicit-it}{the docs} for details.}
-\label{fig:equiv}
-\end{figure}
+\end{lstlisting}
+    \caption{Closure can explicitly define parameters, or otherwise have the implicit parameter \texttt{it}.}
+    \label{snip:implicit-params}
+\stopSnippetFig
 
 \subsection{More than super-lambdas}
 \label{sec:super-lambdas}
 The real power of closures comes from \emph{delegate injection}.
 Unlike a Java lambda, closures are [TODO WORDS]
 
-\begin{figure}
-  \centering
-  \begin{lstlisting}[language=Groovy]
+\startSnippetFig
+\begin{lstlisting}[language=Groovy]
 class MyStringContainer {
   private myString
 
@@ -153,14 +190,15 @@ class MyStringContainer {
     return myString + s
   }
 }
-  \end{lstlisting}
-  \caption{We will use this simple class in many of the subsequent examples.}
-  \label{fig:container}
-\end{figure}
+\end{lstlisting}
+    \caption{We will use this simple class in many of the subsequent examples.}
+    \label{snip:container}
+\stopSnippetFig
 
 
 Consider the following function which takes a \texttt{MyStringContainer} and a closure.
 
+\startSnippetFig
 \begin{lstlisting}[language=Groovy]
 String myFunc(MyStringContainer container,
               Closure someClosure){
@@ -172,6 +210,9 @@ println myFunc(new MyStringContainer("Hello"), {
   plus " world!"
 })
 \end{lstlisting}
+\end{framed}
+\end{minipage}
+\end{snippet}
 
 This snippet will print \texttt{Hello world!}  [TODO explain why]
 
@@ -230,7 +271,8 @@ String myFunc(MyStringContainer container,
   someClosure()  // <- no explicit return
 }
 
-               // note paren placement here  v
+               // note paren placement here  |
+               //                            V
 println myFunc(new MyStringContainer("Hello")) {
   plus " world!"
 }    // <- not here
@@ -238,7 +280,7 @@ println myFunc(new MyStringContainer("Hello")) {
 
 \subsubsection{Corollary: What seems like keywords are actually function calls}
 
-Consider the code presented in Figure \ref{fig:keywords}, pulled from Apache Geode's build.
+Consider the code presented in Snippet \ref{snip:keywords}, pulled from Apache Geode's build.
 In this snippet, we declare a task of type \texttt{Jar} and configure it.
 
 It might initially seem like a convoluted markup language,
@@ -248,8 +290,7 @@ Knowing the concepts presented above, however, we can see that it is a culminati
 In my own learning of Groovy and Gradle, realizing this did a great deal to demystify the
   code I was attempting to improve.
 
-\begin{figure}[h]
-  \centering
+\startSnippetFig
   \begin{lstlisting}[language=Groovy]
 // From apache/geode.git/geode-assembly/build.gradle
 tasks.register('depsJar', Jar) {
@@ -273,9 +314,9 @@ tasks.register('depsJar', Jar) {
     the \texttt{doFirst} function takes another closure,
     the delegate of which can handle the \texttt{manifest} function call.
   And so on.}
-  \label{fig:keywords}
-\end{figure}
-  
+  \label{snip:keywords}
+\stopSnippetFig
+
 \section{Gradle crash course}
 
 \subsection{The root project, subprojects, and buildSrc}
