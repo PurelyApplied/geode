@@ -341,16 +341,30 @@ tasks.register('depsJar', Jar) {
 \subsection{The root project, subprojects, and buildSrc}
 
 Your Gradle build structures itself similar to your directory structure.
-The build begins in some root directory containing a \texttt{build.gradle} file and almost certainly also a \texttt{settings.gradle} file.
-This corresponds to your \emph{rootProject} of the build.
+The build begins in some root directory containing a \texttt{build.gradle} and \texttt{settings.gradle} files.
+This root directory corresponds to your \emph{root project} of the build.
 
 In the \texttt{settings.gradle} file, you might indicate subdirectories that this build should \texttt{include}.
-These directories become \emph{subprojects}
+These directories become \emph{subprojects}.
 
-There is one special subproject that does not need to be called out as include, and that is \texttt{buildSrc}.
-This subproject will contain any special files that the Gradle build might need to execute.
-For instance, if you have a custom class defining how testing should work, that class will be compiled by the \texttt{buildSrc} subproject before your main build begins.
-Alternatively, any custom plugins you use in your Gradle build can be compiled here and consumed by your build, without having to host the plugin to the Gradle Plugin Portal.
+In an ideal world, projects and subprojects are structured hierarchically,
+ with shared resources required by multiple subprojects belonging to their nearest common ancestor.
+While we rarely get to live in an ideal world, developers should do as much as they can to keep their builds modular and,
+  barring full modularity, looking only upward.
+When necessary, one subproject can refer to another simply by calling for it by it's colon-separated path, e.g. \texttt{project("path:to:some:subproject")}.
+Be warned, however, that this can easily undermine the stability and correctness of your build, while also making configuration of either subproject more difficult.
+(Build phases and configuration is discussed more below.)
+
+Lastly, there is one special, optional "side project" -- the \texttt{buildSrc} project.
+This project does not need to be called out in your \texttt{settings.gradle}, since it isn't intended as part of your project itself.
+Rather, \texttt{buildSrc} will contain any special files that you need to build for the execution of the Gradle build itself.
+For instance, if you have a custom class defining how testing should work, that class belongs to \texttt{buildSrc} subproject.
+The \texttt{buildSrc} project is always built before your main build begins,%
+\footnote{
+  Or rather, if your \texttt{buildSrc} is relatively stable, it should more often get the required artifacts from the Gradle cache.
+}
+and so those classes will be available to your root project and subprojects as needed.
+
 
 \subsection{The build in broadest of strokes - Tasks, the Task Graph, and Task I/O}
 
