@@ -52,8 +52,8 @@
 
 
 \newcommand{\startSnippetFig}{%
-\begin{snippet}[t]
-  \begin{minipage}[c]{.6\textwidth}
+\begin{snippet}
+  \begin{minipage}[c]{.9\textwidth}
     \begin{framed}
 }
 \newcommand{\stopSnippetFig}{%
@@ -66,6 +66,8 @@
 
 \maketitle
 \tableofcontents
+
+\listofsnippets
 \newpage
 
 \section{Introduction and disclaimer}
@@ -149,7 +151,7 @@ Closures often have an implicit parameter of \texttt{it}.
 See Snippet \ref{snip:implicit-params} for a trivial example.
 
 \startSnippetFig
-      \begin{lstlisting}[language=Groovy]
+\begin{lstlisting}[language=Groovy]
 def greeting1 = { "Hello, $it!" }
 def greeting2 = { it -> "Hello, $it!" }
 def greeting3 = { name -> "Hello, $name!" }
@@ -157,8 +159,8 @@ assert greeting1("Patrick") == "Hello, Patrick!"
 assert greeting2("Patrick") == "Hello, Patrick!"
 assert greeting3("Patrick") == "Hello, Patrick!"
 \end{lstlisting}
-    \caption{Closure can explicitly define parameters, or otherwise have the implicit parameter \texttt{it}.}
-    \label{snip:implicit-params}
+\caption{Closure can explicitly define parameters, or otherwise have the implicit parameter \texttt{it}.}
+\label{snip:implicit-params}
 \stopSnippetFig
 
 \subsection{More than super-lambdas}
@@ -210,9 +212,9 @@ println myFunc(new MyStringContainer("Hello"), {
   plus " world!"
 })
 \end{lstlisting}
-\end{framed}
-\end{minipage}
-\end{snippet}
+\caption{boo}
+\label{snip:boo}
+\stopSnippetFig
 
 This snippet will print \texttt{Hello world!}  [TODO explain why]
 
@@ -221,23 +223,27 @@ This snippet will print \texttt{Hello world!}  [TODO explain why]
 
 Setters and getters are boring.
 Groovy doesn't make you use them.
+Consider Snippet \ref{snip:get-set}
+
 The following are equivalent.
 
-In the Java-style
+\startSnippetFig
 \begin{lstlisting}[language=Groovy]
+// In the Java-style
 MyStringContainer x = new MyStringContainer("foo")
 println(x.getMyString())
 x.setMyString("bar")
 println(x.getMyString())
-\end{lstlisting}
 
-Making the same function-calls in Groovy
-\begin{lstlisting}[language=Groovy]
+// Equivalent function calls in the Groovy style
 def x = new MyStringContainer("foo")
 println x.myString
 x.myString = "bar"
 println x.myString
 \end{lstlisting}
+\caption{Groovy uses setters and getters but adopts a more direct syntax.}
+\label{snip:get-set}
+\stopSnippetFig
 
 Note that if you run this locally, you \emph{do} get
   the \texttt{"In setter"} and \texttt{"In getter"} prints in both cases.
@@ -245,7 +251,12 @@ Note that if you run this locally, you \emph{do} get
 \subsubsection{Playing fast and loose with parentheses return values}
 
 Let us consider again the snippet from Section \ref{sec:super-lambdas}.
+In Snippet \ref{snip:return-values}, we see two bits of syntactic sugar.
 
+\startSnippetFig
+The following are equivalent:
+
+\hrule
 \begin{lstlisting}[language=Groovy]
 String myFunc(MyStringContainer container,
               Closure someClosure){
@@ -258,12 +269,7 @@ println myFunc(new MyStringContainer("Hello"), {
 })
 \end{lstlisting}
 
-Groovy does not require an explicit \texttt{return}, and in its absense, will return the last
-  line called.
-Also, Groovy will allow you to close the paren before the last argument of a function if that
-  final argument is a closure.
-As such, the following snippet is equivalent to the above.
-
+\hrule
 \begin{lstlisting}[language=Groovy]
 String myFunc(MyStringContainer container,
               Closure someClosure){
@@ -271,12 +277,25 @@ String myFunc(MyStringContainer container,
   someClosure()  // <- no explicit return
 }
 
-               // note paren placement here  |
-               //                            V
+//                note paren placement here  |
+//                                           V
 println myFunc(new MyStringContainer("Hello")) {
   plus " world!"
 }    // <- not here
 \end{lstlisting}
+\hrule\smallskip
+
+In either case, \texttt{"Hello world!"} is printed.
+
+\caption{Final closure arguments can be passed after a closing function-call's parentheses, and return values need not be explicitly declared.}
+\label{snip:return-values}
+\stopSnippetFig
+
+Groovy does not require an explicit \texttt{return},
+  and in its absence, will return the value of the last line called.
+Also, Groovy will allow you to close the paren before the last argument of a function if that
+  final argument is a closure.
+As such, the following snippet is equivalent to the above.
 
 \subsubsection{Corollary: What seems like keywords are actually function calls}
 
